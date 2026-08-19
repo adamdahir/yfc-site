@@ -1,0 +1,23 @@
+# Build output — Netlify regenerates this on every deploy
+dist/
+*.zip
+
+# Manual backups taken during the build. Git is the history now, so these are
+# no longer needed — kept out of the repo rather than versioned. 17MB of old
+# snapshots, several containing superseded copy that must never ship.
+index.pre-*.html
+*.bak
+*.pre-visible
+styles.pre-contrast*.css
+
+# Local working folder for photos awaiting processing
+photos-inbox/
+
+# OS noise
+.DS_Store
+._*
+Thumbs.db
+
+# Unreferenced strays that predate the rebuild — not used by any page.
+coil-life-death.gif
+ziGruM0G

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>YFC — mobile harness</title>
+<!--
+  The embedded browser tab cannot be resized (outerWidth reports 0), so the
+  mobile pass could not be done by shrinking the window. An iframe establishes
+  its own viewport, which means media queries inside it fire against the IFRAME
+  width, not the window. Same origin, so we can reach into contentDocument and
+  measure. This is a dev tool — do not deploy it.
+-->
+<style>
+  body { margin:0; background:#111; color:#eee; font:13px/1.5 ui-monospace,Menlo,monospace; padding:16px; }
+  h1 { font-size:14px; margin:0 0 12px; color:#E8B778; }
+  .rack { display:flex; gap:16px; align-items:flex-start; overflow-x:auto; }
+  .dev { flex:none; }
+  .dev p { margin:0 0 6px; color:#CEAF82; }
+  iframe { border:1px solid #444; background:#fff; display:block; }
+  #out { white-space:pre-wrap; margin-top:16px; font-size:12px; max-height:40vh; overflow:auto; background:#000; padding:12px; border:1px solid #333; }
+</style>
+</head>
+<body>
+<h1>YFC mobile harness — 390 / 414 / 768</h1>
+<div class="rack">
+  <div class="dev"><p>390 × 844 (iPhone)</p><iframe id="f390" src="index.html" width="390" height="844"></iframe></div>
+  <div class="dev"><p>414 × 896</p><iframe id="f414" src="index.html" width="414" height="896"></iframe></div>
+  <div class="dev"><p>768 × 1024 (tablet)</p><iframe id="f768" src="index.html" width="768" height="1024"></iframe></div>
+</div>
+<div id="out">loading…</div>
+
+<script>
+const PAGES = ['home','sermons','believe','nextsteps','livestream','resources','ministries','events','give','college'];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function audit(frameId, label) {
+  const f = document.getElementById(frameId);
+  const w = f.contentWindow, d = f.contentDocument;
+  const vw = d.documentElement.clientWidth;
+  const lines = [`\n══ ${label}  (clientWidth ${vw}, mq<=1180 ${w.matchMedia('(max-width:1180px)').matches}) ══`];
+
+  for (const p of PAGES) {
+    if (typeof w.showPage === 'function') w.showPage(p); else continue;
+    await sleep(350);
+    const root = d.getElementById('page-' + p);
+    if (!root) { lines.push(`${p}: MISSING`); continue; }
+
+    // horizontal overflow
+    const over = [];
+    const seen = new Set();
+    root.querySelectorAll('*').forEach(e => {
+      const r = e.getBoundingClientRect();
+      if (r.width < 1) return;
+      if (r.right > vw + 2 || r.left < -2) {
+        const sel = e.tagName.toLowerCase() + '.' + String(e.className||'').trim().split(/\s+/)[0];
+        if (seen.has(sel)) return; seen.add(sel);
+        over.push(`${sel}[w${Math.round(r.width)} r${Math.round(r.right)}]`);
+      }
+    });
+
+    // tap targets under 24x24 (WCAG 2.2 SC 2.5.8)
+    const tiny = new Set();
+    root.querySelectorAll('a,button,input,select,textarea').forEach(e => {
+      const r = e.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0 && (r.width < 24 || r.height < 24)) {
+        tiny.add(e.tagName.toLowerCase() + '.' + String(e.className||'').trim().split(/\s+/)[0]);
+      }
+    });
+
+    // text smaller than the 12px floor
+    const small = new Set();
+    root.querySelectorAll('p,span,a,li,h1,h2,h3,h4,button').forEach(e => {
+      if (!e.textContent.trim()) return;
+      const fs = parseFloat(w.getComputedStyle(e).fontSize);
+      if (fs && fs < 12) small.add(e.tagName.toLowerCase() + '.' + String(e.className||'').trim().split(/\s+/)[0] + '@' + fs + 'px');
+    });
+
+    const scrollW = d.documentElement.scrollWidth;
+    const hscroll = scrollW > vw + 2;
+    const flags = [];
+    if (hscroll) flags.push(`H-SCROLL scrollW=${scrollW}`);
+    if (over.length) flags.push('overflow: ' + over.slice(0,4).join(' '));
+    if (tiny.size) flags.push('tiny: ' + [...tiny].slice(0,4).join(' '));
+    if (small.size) flags.push('sub12px: ' + [...small].slice(0,3).join(' '));
+    lines.push(`${(flags.length ? 'FAIL ' : 'ok   ')}${p.padEnd(11)} ${flags.join(' | ')}`);
+  }
+  return lines.join('\n');
+}
+
+window.addEventListener('load', async () => {
+  await sleep(2500);
+  const out = document.getElementById('out');
+  let txt = '';
+  try {
+    txt += await audit('f390', '390 iPhone');
+    txt += await audit('f414', '414');
+    txt += await audit('f768', '768 tablet');
+  } catch (e) { txt += '\nERROR: ' + e.message; }
+  out.textContent = txt;
+  window.__mobileReport = txt;
+});
+</script>
+</body>
+</html>

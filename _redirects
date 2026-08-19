@@ -1,0 +1,5 @@
+# Redirect www to apex
+https://www.yakimafoursquare.org/*  https://yakimafoursquare.org/:splat  301!
+
+# SPA fallback — serve index.html for any path not matched by a file
+/*  /index.html  200

@@ -1,0 +1,20 @@
+[build]
+  command = "bash build.sh"
+  publish = "dist"
+
+# Static site, no framework, no dependencies to install.
+[build.environment]
+  NODE_VERSION = "20"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    # Asset filenames are stable, but they're versioned by the ?v= query on
+    # the HTML references, so a long cache is safe and makes repeat visits fast.
+    Cache-Control = "public, max-age=31536000"
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    # Always revalidate HTML so an edit is live the moment it deploys.
+    Cache-Control = "public, max-age=0, must-revalidate"
