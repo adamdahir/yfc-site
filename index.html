@@ -210,8 +210,12 @@
 }
 </script>
 
-<!-- Adobe Fonts — add your Typekit kit URL here, e.g. https://use.typekit.net/XXXXXXX.css -->
-<!-- <link rel="stylesheet" href="https://use.typekit.net/XXXXXXX.css"> -->
+<!-- Adobe Fonts (Typekit) — supplies adobe-jenson-pro, the display serif the whole
+     design rests on. Without this, every serif headline silently fell back to the
+     browser's default Times. preconnect so the fetch starts as early as possible. -->
+<link rel="preconnect" href="https://use.typekit.net" crossorigin>
+<link rel="preconnect" href="https://p.typekit.net" crossorigin>
+<link rel="stylesheet" href="https://use.typekit.net/vop5coh.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lenis@1.3.4/dist/lenis.min.js"></script>
@@ -222,7 +226,7 @@
   <link rel="preload" as="image" href="assets/hero-a9a0118a.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=1787158681">
+  <link rel="stylesheet" href="styles.css?v=1787177020">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231E2D1E'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='28' font-weight='700' fill='%23E8E0D0' text-anchor='middle' letter-spacing='-1'%3EYF%3C/text%3E%3C/svg%3E" type="image/svg+xml">
 </head>
 <body>
@@ -235,7 +239,38 @@
     <span id="ann-text"></span>
     <button class="ann-dismiss" onclick="yfcDismissAnnouncement()" aria-label="Dismiss announcement">&times;</button>
   </div>
-  <a href="#main-content" class="skip-link">Skip to content</a>
+  <!-- ROUTING: Netlify creates one form per form-name it finds in the built HTML.
+     These four are never shown; they exist so four separate forms appear in the
+     Netlify dashboard, each with its own notification address. nsSubmit() picks
+     which one to post to based on the visitor's answer.
+
+     Nobody's email address appears in this repo — recipients are set in
+     Netlify > Forms > (form) > notifications, so staff changes need no code
+     change and no deploy. -->
+<div hidden aria-hidden="true">
+  <form name="connect-decision" data-netlify="true" netlify-honeypot="bot-field">
+    <input name="form-name" value="connect-decision"><input name="bot-field">
+    <input name="first"><input name="last"><input name="email"><input name="phone">
+    <input name="step"><textarea name="note"></textarea>
+  </form>
+  <form name="connect-belong" data-netlify="true" netlify-honeypot="bot-field">
+    <input name="form-name" value="connect-belong"><input name="bot-field">
+    <input name="first"><input name="last"><input name="email"><input name="phone">
+    <input name="step"><textarea name="note"></textarea>
+  </form>
+  <form name="connect-serve" data-netlify="true" netlify-honeypot="bot-field">
+    <input name="form-name" value="connect-serve"><input name="bot-field">
+    <input name="first"><input name="last"><input name="email"><input name="phone">
+    <input name="step"><textarea name="note"></textarea>
+  </form>
+  <form name="connect-talk" data-netlify="true" netlify-honeypot="bot-field">
+    <input name="form-name" value="connect-talk"><input name="bot-field">
+    <input name="first"><input name="last"><input name="email"><input name="phone">
+    <input name="step"><textarea name="note"></textarea>
+  </form>
+</div>
+
+<a href="#main-content" class="skip-link">Skip to content</a>
 
 <!-- NAV -->
 <nav class="on-dark" id="nav">
@@ -2476,7 +2511,7 @@
           </article>
         </div>
 
-        <p class="lp-years-tie">If that shape looks familiar, it should &mdash; it is the same movement as the church&rsquo;s own pathway: <strong>Begin, Belong, Contribute, Multiply</strong>. <a href="#" onclick="showPage('nextsteps');return false;">See the pathway</a></p>
+        <p class="lp-years-tie">If that shape looks familiar, it should &mdash; it is the same movement as the church&rsquo;s own pathway: <strong>Begin, Belong, Contribute, Multiply</strong>. <a class="lp-tie-link" href="#" onclick="showPage('nextsteps');return false;">See the pathway</a></p>
       </div>
     </section>
 
@@ -2505,6 +2540,31 @@
             </ul>
           </div>
         </div>
+      </div>
+    </section>
+
+    <section class="lp-cost">
+      <div class="lp-inner">
+        <span class="lp-label">Cost</span>
+        <h2 class="lp-h2">What it costs,<br>plainly.</h2>
+        <div class="lp-cost-grid">
+          <div class="lp-cost-item">
+            <p class="lp-cost-k">Tuition</p>
+            <p class="lp-cost-v">Set by LPU</p>
+            <p class="lp-cost-note">Micro campus tuition is charged at a reduced rate compared with studying on the residential campus. Billed by Life Pacific University, not the church.</p>
+          </div>
+          <div class="lp-cost-item">
+            <p class="lp-cost-k">Our site fee</p>
+            <p class="lp-cost-v">$2,000<span class="lp-cost-per">per year</span></p>
+            <p class="lp-cost-note">Paid to the church, on top of LPU tuition. This covers running the campus here &mdash; the mentorship, the ministry placement, and the people who do it.</p>
+          </div>
+          <div class="lp-cost-item">
+            <p class="lp-cost-k">Financial aid</p>
+            <p class="lp-cost-v">Most students qualify</p>
+            <p class="lp-cost-note">Handled by LPU&rsquo;s financial aid office. Worth applying before you rule anything out on cost.</p>
+          </div>
+        </div>
+        <p class="lp-cost-kicker">If money is the thing standing in the way, say so and we will walk through it with you. We would much rather have that conversation than lose you to a number on a page.</p>
       </div>
     </section>
 
@@ -2570,7 +2630,7 @@
 
 
 
-  <script src="app.js?v=1787158681" defer></script>
-  <script src="ui.js?v=1787158681" defer></script>
+  <script src="app.js?v=1787177020" defer></script>
+  <script src="ui.js?v=1787177020" defer></script>
 </body>
 </html>

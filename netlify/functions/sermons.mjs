@@ -1,0 +1,71 @@
+/**
+ * Sermon feed — reads YouTube's public Atom feed for the church channel.
+ *
+ * WHY THIS EXISTS INSTEAD OF THE YOUTUBE DATA API
+ * The Data API needs a key. A key in front-end code is public, has a daily
+ * quota that can be exhausted by anyone who finds it, needs domain
+ * restrictions configured in Google Cloud, and expires or gets revoked.
+ * The Atom feed needs none of that — it is public, unauthenticated and
+ * unmetered. The only reason the page cannot read it directly is that
+ * YouTube sends no CORS header, so this function fetches it server-side and
+ * hands back JSON from our own origin.
+ *
+ * No credentials. Nothing to leak, restrict, rotate or run out of.
+ */
+
+const CHANNEL_ID = 'UCzr3Q1kImqSqozM-E2g0lJQ';
+const FEED = `https://www.youtube.com/feeds/videos.xml?channel_id=${CHANNEL_ID}`;
+
+/* Atom is predictable enough to read without pulling in an XML dependency. */
+function parseFeed(xml) {
+  const entries = [];
+  const blocks = xml.split('<entry>').slice(1);
+  for (const block of blocks) {
+    const pick = (tag) => {
+      const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`));
+      return m ? m[1].trim() : '';
+    };
+    const id = pick('yt:videoId');
+    if (!id) continue;
+    entries.push({
+      id,
+      title: decode(pick('title')),
+      published: pick('published'),
+      thumbnail: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
+      url: `https://www.youtube.com/watch?v=${id}`
+    });
+  }
+  return entries;
+}
+
+function decode(s) {
+  return s
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&apos;/g, "'");
+}
+
+export default async function handler() {
+  try {
+    const res = await fetch(FEED, { headers: { 'User-Agent': 'yakimafoursquare.org' } });
+    if (!res.ok) throw new Error(`feed responded ${res.status}`);
+
+    const items = parseFeed(await res.text());
+    if (!items.length) throw new Error('feed parsed but contained no videos');
+
+    return new Response(JSON.stringify({ items }), {
+      headers: {
+        'Content-Type': 'application/json',
+        /* Cache at the edge for an hour. A church posts a few videos a week;
+           there is no reason to hit YouTube on every page view. */
+        'Cache-Control': 'public, max-age=0, s-maxage=3600'
+      }
+    });
+  } catch (err) {
+    /* Fail soft. The Sermons page is built to work with no data at all, so a
+       broken feed shows the static archive link rather than an error. */
+    return new Response(JSON.stringify({ items: [], error: String(err.message || err) }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+    });
+  }
+}

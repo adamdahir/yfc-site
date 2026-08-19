@@ -396,7 +396,26 @@ function nsSubmit(e, formId, successId) {
     err.textContent = msg;
   }
 
+  /* Route to the right destination form based on what they picked, so the
+     submission lands with the person who actually handles it rather than in one
+     shared inbox somebody has to remember to watch. The four names are declared
+     as hidden forms in index.html; recipients are configured in Netlify, not
+     here, so staff changes never require a code change. */
+  var ROUTES = {
+    'I made a decision to follow Jesus': 'connect-decision',
+    'I want to be baptized':             'connect-decision',
+    'I want to join a Life Group':       'connect-belong',
+    'I want to become a member':         'connect-belong',
+    'I want to start serving':           'connect-serve',
+    "I'm ready to be commissioned":      'connect-serve',
+    'I just want to talk to someone':    'connect-talk'
+  };
+  var stepEl = form.querySelector('[name="step"]');
+  var chosen = stepEl ? stepEl.value : '';
+  var target = ROUTES[chosen] || 'connect-talk';   /* unknown answer still reaches a human */
+
   var data = new FormData(form);
+  data.set('form-name', target);
   var body = new URLSearchParams();
   data.forEach(function (v, k) { body.append(k, v); });
 
@@ -422,9 +441,16 @@ function nsSubmit(e, formId, successId) {
 var YFC_CONFIG = {
 
   /* ── YOUTUBE ──────────────────────────────────────────────
-     1. Go to console.cloud.google.com
-     2. New project → Enable "YouTube Data API v3"
-     3. Create Credentials → API Key → paste below            */
+     NO API KEY NEEDED. Sermons read YouTube's public Atom feed via
+     netlify/functions/sermons.mjs — no credentials, no quota, nothing
+     to restrict or rotate.
+
+     The key below is optional and used for ONE thing: detecting whether
+     a stream is live right now, which the Atom feed cannot report.
+     Left unset, the livestream page embeds YouTube's own live_stream
+     URL, which shows the stream when there is one and an offline state
+     when there isn't. That is the current behaviour and it works.
+     Only set a key if you want a custom "we're live" indicator. */
   YOUTUBE_API_KEY:    'YOUR_YOUTUBE_API_KEY',
   YOUTUBE_CHANNEL_ID: 'UCzr3Q1kImqSqozM-E2g0lJQ',
   YOUTUBE_MAX_RESULTS: 9,
@@ -561,20 +587,32 @@ var YFC_CONFIG = {
   }
   window._yfcSrmRevealLive = srmRevealLive;
 
+  /* Sermons come from a Netlify function that reads YouTube's public Atom feed
+     server-side. No API key: nothing to leak, restrict, rotate or run out of.
+     See netlify/functions/sermons.mjs.
+
+     Fails soft by design — if the function is unreachable (e.g. running from a
+     plain file:// or a static server with no functions), the page keeps its
+     static archive link instead of showing an error. */
   function fetchYouTube() {
-    if (YFC_CONFIG.YOUTUBE_API_KEY === 'YOUR_YOUTUBE_API_KEY') {
-      console.log('[YFC Sermons] No API key — static archive link is showing, which is the intended fallback. Set YFC_CONFIG.YOUTUBE_API_KEY (domain-restricted to yakimafoursquare.org) to switch the page to the live feed.');
-      return;
-    }
-    fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=' +
-      YFC_CONFIG.YOUTUBE_CHANNEL_ID + '&maxResults=' + YFC_CONFIG.YOUTUBE_MAX_RESULTS +
-      '&order=date&type=video&key=' + YFC_CONFIG.YOUTUBE_API_KEY)
-      .then(function(r) { return r.json(); })
-      .then(function(d) {
-        if (d.error) { console.warn('[YFC Sermons] API error:', d.error.message); return; }
-        renderYouTube(d.items);
+    fetch('/.netlify/functions/sermons')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || !d.items || !d.items.length) {
+          console.log('[YFC Sermons] No feed data — static archive link showing.');
+          return;
+        }
+        /* Shape it like the old API response so renderYouTube is unchanged. */
+        renderYouTube(d.items.map(function (v) {
+          return {
+            id: { videoId: v.id },
+            snippet: { title: v.title, publishedAt: v.published }
+          };
+        }));
       })
-      .catch(function(e) { console.warn('[YFC Sermons] Fetch failed:', e); });
+      .catch(function () {
+        console.log('[YFC Sermons] Feed unavailable — static archive link showing.');
+      });
   }
 
   window._yfcFetchSermons = fetchYouTube;

@@ -4960,7 +4960,15 @@ a[href], button, [role="button"], input, select, textarea, .srm-filter, .pw-tab,
   .lp-years-tie { font-size: 16px; line-height: 1.8; color: var(--text); font-weight: 300; margin: 0; background: var(--amber-300); border-left: 6px solid var(--amber-600); padding: 24px 32px; }
   /* amber-700 on the amber-300 panel measured 3.38:1 — the link sits ON the
      accent, so it needs ink, not more amber. */
-  .lp-years-tie a { color: var(--u-950); font-weight: 700; text-decoration: none; border-bottom: 2px solid var(--amber-700); }
+  /* Must out-specify the global `p a:not([class])` rule, which sets amber-700
+     and measured 3.38:1 on this amber-300 panel. The link sits ON the accent,
+     so it needs ink, not more amber. */
+  /* Given a real class so the global `p a:not([class])` rule stops matching
+     it entirely. That rule sets amber-700, which measured 3.38:1 on this
+     amber-300 panel. Escalating specificity was tried twice and lost;
+     naming the element is the fix that stays fixed. */
+  .lp-tie-link { color: var(--u-950); font-weight: 700; text-decoration: none; border-bottom: 2px solid var(--amber-700); }
+  .lp-tie-link:hover { border-bottom-color: var(--u-950); }
 
   /* the week */
   .lp-week { padding: 128px 0; background: var(--u-950); }
@@ -5098,5 +5106,19 @@ a[href], button, [role="button"], input, select, textarea, .srm-filter, .pw-tab,
 
   @media (max-width: 1180px) {
     .ann-banner.ann-visible { font-size: 13px; padding: 10px 48px 10px 16px; text-align: left; }
+  }
+}
+
+@layer utilities {
+  /* The period matters more than the number — "$2,000" alone is the figure
+     someone screenshots and holds you to. Kept visually subordinate but
+     never separated from the amount. */
+  .lp-cost-per {
+    display: block;
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-mid);
+    margin-top: 4px;
   }
 }
