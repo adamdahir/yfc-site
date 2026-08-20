@@ -40,6 +40,7 @@ function _doShowPage(id) {
     give:       { title: 'Give | Yakima Foursquare Church | Yakima, WA',                                     desc: 'Support the mission of Yakima Foursquare Church through generous giving. Every gift helps us serve Yakima and the world.' },
     believe:    { title: 'What We Believe | Yakima Foursquare Church | Yakima, WA',                          desc: 'Learn what Yakima Foursquare Church believes about God, Jesus, the Holy Spirit, and the Bible — and what that means for everyday life.' },
     livestream: { title: 'Watch Live | Yakima Foursquare Church | Yakima, WA',                          desc: 'Watch Yakima Foursquare Church live every Sunday at 9:00 AM and 10:30 AM PT. Join us from anywhere.' },
+    team:       { title: 'Our Team | Yakima Foursquare Church | Yakima, WA',                       desc: 'Meet the pastors and staff of Yakima Foursquare Church \u2014 the people you will actually see on a Sunday in Yakima, WA.' },
     resources:  { title: 'Resources | Yakima Foursquare Church | Yakima, WA',                           desc: 'Studies, reading, and resources to go deeper in your faith, from Yakima Foursquare Church in Yakima, WA.' },
     /* Name comes straight from LPU's own deck: "Life Pacific University
        Yakima". An invented name ("Yakima Life College") was used before the
@@ -603,6 +604,7 @@ var YFC_CONFIG = {
           return;
         }
         /* Shape it like the old API response so renderYouTube is unchanged. */
+        /* thumbnail/url are derived here rather than sent over the wire. */
         renderYouTube(d.items.map(function (v) {
           return {
             id: { videoId: v.id },

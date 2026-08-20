@@ -679,7 +679,7 @@ nav.menu-open .nav-close { color: var(--text) !important; }
 /* HOME HERO */
 .home-hero {
   position: relative;
-  height: 100vh;
+  height: 100vh; height: 100dvh;
   min-height: 600px;
   overflow: hidden;
   display: flex;
@@ -3653,7 +3653,7 @@ p, .desc, .footer-desc,
   content: ''; position: absolute; left: 50%; bottom: 4px;
   width: 3px; height: 3px; border-radius: 50%; background: var(--amber-500);
   transform: translateX(-50%) scale(0); opacity: 0;
-  transition: transform .28s cubic-bezier(.34,1.56,.64,1), opacity .22s ease;
+  transition: transform .28s cubic-bezier(.22,1,.36,1), opacity .22s ease;  /* was an overshoot curve; real objects decelerate, they don't spring back */
 }
 .switcher button.active::after { transform: translateX(-50%) scale(1); opacity: 1; }
 
@@ -4112,7 +4112,7 @@ a[href], button, [role="button"], input, select, textarea, .srm-filter, .pw-tab,
     font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 400;
     color: var(--text-mid); padding: 10px 0; width: 100%;
     border-bottom: 1px solid rgba(22,19,15,.08);
-    transition: color .2s, padding-left .2s;
+    transition: color .2s, transform .2s;   /* padding animation caused layout thrash; transform is composited */
   }
   .menu-panel-link:hover { color: var(--text); padding-left: 8px; }
   @media (prefers-reduced-motion: reduce) { .menu-panel { animation: none; } }
@@ -4268,7 +4268,7 @@ a[href], button, [role="button"], input, select, textarea, .srm-filter, .pw-tab,
 
   /* entrance: tiles pop in sequence */
   .menu-panel:not([hidden]) .menu-panel-link {
-    animation: mpTile .38s cubic-bezier(.34,1.4,.64,1) both;
+    animation: mpTile .38s cubic-bezier(.22,1,.36,1) both;  /* overshoot removed */
   }
   @keyframes mpTile { from { opacity: 0; transform: scale(.92) translateY(8px); } to { opacity: 1; transform: none; } }
   .menu-panel:not([hidden]) .menu-panel-link:nth-child(1){animation-delay:0s}
@@ -4300,14 +4300,14 @@ a[href], button, [role="button"], input, select, textarea, .srm-filter, .pw-tab,
   .pathsteps-inner {
     max-width: none; margin: 0; gap: 0;
     display: grid; grid-template-columns: minmax(0,0.78fr) minmax(0,1fr);
-    align-items: stretch; min-height: 100vh;
+    align-items: stretch; min-height: 100vh; min-height: 100dvh;
   }
 
   /* LEFT — deepest dark, an anchor the eye returns to */
   .pathsteps-left {
     position: sticky; top: 0; align-self: start;
     background: #0B0908;
-    min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+    min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; justify-content: center;
     padding: 96px clamp(32px,5vw,88px);
   }
   .pathsteps-eyebrow { font-size: 12px; letter-spacing: .18em; color: var(--amber-500); margin: 0 0 28px; }
@@ -4331,7 +4331,7 @@ a[href], button, [role="button"], input, select, textarea, .srm-filter, .pw-tab,
   .pathsteps-right[data-active="04"] { background: #A55E22; }
 
   .pstep {
-    min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+    min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; justify-content: center;
     padding: 96px clamp(32px,5vw,88px);
     border: none; opacity: .22;
     transition: opacity .55s ease;
@@ -4641,7 +4641,7 @@ a[href], button, [role="button"], input, select, textarea, .srm-filter, .pw-tab,
     padding: 32px 0; border-bottom: 1px solid var(--u-300);
     transition: background .2s, padding-left .2s;
   }
-  .lp-deg:hover { background: var(--amber-300); padding-left: 16px; }
+  .lp-deg:hover { background: var(--amber-300); transform: translateX(16px); }
   .lp-deg-level { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--amber-700); }
   .lp-deg-name { font-family: 'adobe-jenson-pro', Georgia, serif; font-size: clamp(26px, 2.8vw, 38px); font-weight: 400; color: var(--text); margin: 0; letter-spacing: -0.02em; }
   .lp-deg-for { font-size: 14px; line-height: 1.7; color: var(--text-mid); font-weight: 300; margin: 0; }
@@ -5121,4 +5121,114 @@ a[href], button, [role="button"], input, select, textarea, .srm-filter, .pw-tab,
     color: var(--text-mid);
     margin-top: 4px;
   }
+}
+
+@layer utilities {
+  /* Give "Where it goes" items were <h4> directly under an <h2>, skipping a
+     level — screen readers use heading order to navigate. Now <h3>; this keeps
+     the visual treatment identical. */
+  .giv-reason h3 {
+    font-family: 'adobe-jenson-pro', Georgia, serif;
+    font-size: 24px; font-weight: 400; color: var(--text);
+    margin: 0 0 8px; letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  /* Tactile press feedback. Every interactive element had a hover state but
+     nothing on :active, so on touch — where there is no hover — a tap gave no
+     confirmation that anything had been registered. A 1px push is enough.
+     transform only, so it is composited and cannot cause layout thrash. */
+  .lp-btn:active,
+  .care-cta:active,
+  .giv-cta:active,
+  .ns-submit:active,
+  .srm-btn:active,
+  .btn-outline-light:active,
+  .btn-outline-dark:active,
+  .home-strip-cta:active,
+  .nav-live-btn:active {
+    transform: translateY(1px);
+  }
+  /* Honour the user's motion preference. */
+  @media (prefers-reduced-motion: reduce) {
+    .lp-btn:active, .care-cta:active, .giv-cta:active, .ns-submit:active,
+    .srm-btn:active, .btn-outline-light:active, .btn-outline-dark:active,
+    .home-strip-cta:active, .nav-live-btn:active { transform: none; }
+  }
+}
+
+@layer utilities {
+  /* ── THE PEOPLE HERE ───────────────────────────────────────────────
+     Deliberately not a card grid. Both design audits flagged the
+     three-equal-column boxed row as the clearest AI-layout signature, so
+     grouping is done with spacing and a shared baseline instead of borders
+     and shadows. Four columns on desktop breaks the three-across rhythm
+     that appears everywhere else on the site. */
+  .tm { background: var(--u-50); padding: 32px 8% 128px; }
+  .tm-inner { max-width: 1180px; margin: 0 auto; }
+
+  .tm-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 64px 32px;
+  }
+
+  .tm-person { margin: 0; }
+  /* <picture> is not a replaced element — it is a plain wrapper. Giving it
+     its own aspect-ratio box AND a background painted a tan panel the size of
+     the photo, which is what was showing instead of the portraits. The
+     wrapper now just lays out; only the <img> is sized and styled. */
+  .tm-person picture { display: block; }
+  .tm-person img {
+    display: block; width: 100%; height: auto;
+    aspect-ratio: 3/4; object-fit: cover;
+    background: var(--u-200);
+  }
+  .tm-person figcaption { padding-top: 16px; }
+
+  .tm-name {
+    font-family: 'adobe-jenson-pro', Georgia, serif;
+    font-size: 24px; font-weight: 400; letter-spacing: -0.02em;
+    color: var(--text); margin: 0 0 4px; line-height: 1.15;
+  }
+  .tm-role {
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--amber-700);              /* 5.58:1 on u-50 ✓ */
+    margin: 0; line-height: 1.4;
+  }
+
+  .tm-foot {
+    margin-top: 96px; padding-top: 32px;
+    border-top: 1px solid var(--linen-dark);
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 24px;
+  }
+  .tm-foot-p { font-size: 16px; line-height: 1.7; color: var(--text-mid); margin: 0; font-weight: 300; max-width: 480px; }
+  .tm-foot-cta {
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    background: var(--amber-700); color: #FFFFFF;   /* 6.19:1 ✓ */
+    text-decoration: none; padding: 16px 32px; min-height: 48px;
+    display: inline-flex; align-items: center; transition: background .2s;
+  }
+  .tm-foot-cta:hover { background: var(--u-900); }
+  .tm-foot-cta:active { transform: translateY(1px); }
+
+  @media (max-width: 1180px) {
+    .tm { padding: 16px 24px 64px; }
+    .tm-grid { grid-template-columns: repeat(2, 1fr); gap: 40px 16px; }
+    .tm-name { font-size: 19px; }
+    .tm-foot { margin-top: 48px; }
+  }
+}
+
+@layer utilities {
+  /* "The people here" is long enough to wrap tall descenders into the line
+     below. The shared .page-hd had no gap between the h1 and its subtitle, so
+     the sub-line rendered 4px above the headline's bottom edge and the two
+     collided. Space them, and stop the headline hugging its own baseline. */
+  .page-hd h1 { line-height: 1.02; margin-bottom: 24px; padding-bottom: 0.06em; }
+  .page-hd-sub { margin-top: 0; }
 }

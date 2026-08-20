@@ -528,11 +528,18 @@
     var scope = root || document;
     var vh = window.innerHeight || 800;
     scope.querySelectorAll('img[loading="lazy"]').forEach(function (img) {
+      /* Wake each image at most once. The earlier version re-assigned
+         img.src on every call for any image that was not yet complete —
+         and it ran on every scroll event, unthrottled. Re-assigning src
+         restarts the fetch, so the image never reached complete, so it was
+         woken again on the next scroll event. A loop that kept the
+         placeholder visible and pinned the renderer. */
+      if (img.dataset.yfcWoken) return;
       if (img.complete && img.naturalWidth > 0) return;
       var r = img.getBoundingClientRect();
       if (r.top < vh * 2 && r.bottom > -vh) {
+        img.dataset.yfcWoken = '1';
         img.loading = 'eager';
-        if (img.src) img.src = img.src;   /* re-kick the fetch */
       }
     });
   }
@@ -551,7 +558,12 @@
       return r;
     };
   }
-  window.addEventListener('scroll', function () { wakeActive(); }, { passive: true });
+  var wakeTicking = false;
+  window.addEventListener('scroll', function () {
+    if (wakeTicking) return;
+    wakeTicking = true;
+    requestAnimationFrame(function () { wakeTicking = false; wakeActive(); });
+  }, { passive: true });
   if (document.readyState === 'complete') setTimeout(wakeActive, 300);
   else window.addEventListener('load', function () { setTimeout(wakeActive, 300); });
 

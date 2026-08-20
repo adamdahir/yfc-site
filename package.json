@@ -1,0 +1,16 @@
+{
+  "name": "yfc-site",
+  "private": true,
+  "type": "module",
+  "description": "Yakima Foursquare Church website",
+  "scripts": {
+    "build": "bash build.sh",
+    "test": "playwright test",
+    "test:mobile": "playwright test --project=mobile",
+    "test:ui": "playwright test --ui",
+    "detect": "npx --yes impeccable detect index.html styles.css"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}

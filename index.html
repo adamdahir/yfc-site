@@ -213,20 +213,26 @@
 <!-- Adobe Fonts (Typekit) — supplies adobe-jenson-pro, the display serif the whole
      design rests on. Without this, every serif headline silently fell back to the
      browser's default Times. preconnect so the fetch starts as early as possible. -->
+<!-- Third-party origins reduced from five to four: anime.js moved off cdnjs
+     onto jsdelivr, which already serves the other four libraries. Every
+     library tag is deferred so a slow or unreachable CDN cannot block first
+     paint. Content never depends on these loading — entrance effects are
+     motion-only and ui.js carries a reveal failsafe. -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://use.typekit.net" crossorigin>
 <link rel="preconnect" href="https://p.typekit.net" crossorigin>
 <link rel="stylesheet" href="https://use.typekit.net/vop5coh.css">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.4/dist/lenis.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/SplitText.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.3.4/dist/lenis.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/gsap.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/ScrollTrigger.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3/dist/SplitText.min.js" defer></script>
 
   <link rel="preload" as="image" href="assets/hero-a9a0118a.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="styles.css?v=1787177020">
+  <link rel="stylesheet" href="styles.css?v=1787247751">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231E2D1E'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='28' font-weight='700' fill='%23E8E0D0' text-anchor='middle' letter-spacing='-1'%3EYF%3C/text%3E%3C/svg%3E" type="image/svg+xml">
 </head>
 <body>
@@ -324,6 +330,7 @@
         
         <button type="button" class="menu-panel-link" onclick="navToPage('home')"><span class="mpl-swatch" style="background:var(--u-200)" aria-hidden="true"></span><span class="mpl-text">Welcome<span class="mpl-note">Who we are</span></span></button>
         <button type="button" class="menu-panel-link" onclick="navToPage('home','home-paths')"><span class="mpl-swatch" style="background:var(--u-500)" aria-hidden="true"></span><span class="mpl-text">Where to begin<span class="mpl-note">Four ways in</span></span></button>
+        <button type="button" class="menu-panel-link" onclick="navToPage('team')"><span class="mpl-swatch" style="background:var(--u-400)" aria-hidden="true"></span><span class="mpl-text">The people here<span class="mpl-note">Who you&rsquo;ll meet on a Sunday</span></span></button>
         <button type="button" class="menu-panel-link" onclick="navToPage('nextsteps','your-first-visit')"><span class="mpl-swatch" style="background:var(--u-800)" aria-hidden="true"></span><span class="mpl-text">Your first Sunday<span class="mpl-note">What to expect when you walk in</span></span></button>
         <button type="button" class="menu-panel-link" onclick="navToPage('sermons')"><span class="mpl-swatch" style="background:var(--amber-500)" aria-hidden="true"></span><span class="mpl-text">Latest message<span class="mpl-note">Catch up on Sunday</span></span></button>
       </div>
@@ -626,7 +633,7 @@
         <p class="footer-col-head">Explore</p>
         <button onclick="showPage('sermons')">Sermons</button>
         <button onclick="showPage('resources')">Resources</button>
-        <button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('college')">College</button>
+        <button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('team')">Our Team</button><button onclick="showPage('college')">College</button>
         <button onclick="showPage('give')">Give</button>
       </div>
       <div class="footer-col">
@@ -1570,7 +1577,7 @@
         <p class="footer-col-head">Explore</p>
         <button onclick="showPage('sermons')">Sermons</button>
         <button onclick="showPage('resources')">Resources</button>
-        <button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('college')">College</button>
+        <button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('team')">Our Team</button><button onclick="showPage('college')">College</button>
         <button onclick="showPage('give')">Give</button>
       </div>
       <div class="footer-col">
@@ -1657,7 +1664,7 @@
         <p class="footer-col-head">Explore</p>
         <button onclick="showPage('sermons')">Sermons</button>
         <button onclick="showPage('resources')">Resources</button>
-        <button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('college')">College</button>
+        <button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('team')">Our Team</button><button onclick="showPage('college')">College</button>
         <button onclick="showPage('give')">Give</button>
       </div>
       <div class="footer-col">
@@ -2107,7 +2114,7 @@
         <p class="footer-col-head">Explore</p>
         <button onclick="showPage('sermons')">Sermons</button>
         <button onclick="showPage('resources')">Resources</button>
-        <button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('college')">College</button>
+        <button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('team')">Our Team</button><button onclick="showPage('college')">College</button>
         <button onclick="showPage('give')">Give</button>
       </div>
       <div class="footer-col">
@@ -2144,7 +2151,7 @@
 
   <div class="events-weekly-banner">
     <div>
-      <h3>Sunday Morning Worship</h3>
+      <h2>Sunday Morning Worship</h2>
       <p>Weekly gathering — worship, teaching, and community. All are welcome.</p>
     </div>
     <div class="events-weekly-times">
@@ -2265,7 +2272,7 @@
         <p class="footer-col-head">Explore</p>
         <button onclick="showPage('sermons')">Sermons</button>
         <button onclick="showPage('resources')">Resources</button>
-        <button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('college')">College</button>
+        <button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('team')">Our Team</button><button onclick="showPage('college')">College</button>
         <button onclick="showPage('give')">Give</button>
       </div>
       <div class="footer-col">
@@ -2329,19 +2336,19 @@
         <h2 class="giv-side-h">Where it goes</h2>
         <div class="giv-reason">
           <span class="giv-num">01</span>
-          <div><h4>Sunday worship</h4><p>Weekly gatherings, music, volunteers, and the building that holds them.</p></div>
+          <div><h3>Sunday worship</h3><p>Weekly gatherings, music, volunteers, and the building that holds them.</p></div>
         </div>
         <div class="giv-reason">
           <span class="giv-num">02</span>
-          <div><h4>Community care</h4><p>Outreach and practical support across Yakima, including the recovery and grief groups that are free and open to anyone.</p></div>
+          <div><h3>Community care</h3><p>Outreach and practical support across Yakima, including the recovery and grief groups that are free and open to anyone.</p></div>
         </div>
         <div class="giv-reason">
           <span class="giv-num">03</span>
-          <div><h4>Life Pacific University Yakima</h4><p>Training the next generation of leaders here, through our micro campus with Life Pacific University.</p></div>
+          <div><h3>Life Pacific University Yakima</h3><p>Training the next generation of leaders here, through our micro campus with Life Pacific University.</p></div>
         </div>
         <div class="giv-reason">
           <span class="giv-num">04</span>
-          <div><h4>Global missions</h4><p>Partnering with Foursquare churches and missionaries beyond the valley.</p></div>
+          <div><h3>Global missions</h3><p>Partnering with Foursquare churches and missionaries beyond the valley.</p></div>
         </div>
       </aside>
 
@@ -2366,7 +2373,160 @@
   <footer>
     <div class="footer-top">
       <div><p class="footer-brand">Yakima Foursquare</p><p class="footer-desc">Yakima, Washington</p></div>
-      <div class="footer-col"><p class="footer-col-head">Pages</p><button onclick="showPage('home')">Home</button><button onclick="showPage('sermons')">Sermons</button><button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('college')">College</button></div>
+      <div class="footer-col"><p class="footer-col-head">Pages</p><button onclick="showPage('home')">Home</button><button onclick="showPage('sermons')">Sermons</button><button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('team')">Our Team</button><button onclick="showPage('college')">College</button></div>
+      <div class="footer-col"><p class="footer-col-head">Connect</p><a href="https://www.youtube.com/@YakimaFoursquareChurch" target="_blank" rel="noopener">YouTube</a><a href="https://www.instagram.com/yakimafoursquare" target="_blank" rel="noopener">Instagram</a></div>
+      <div class="footer-col"><p class="footer-col-head">Visit</p><a href="#" onclick="showPage('nextsteps');return false;">Sundays 9 &amp; 10:30 AM</a></div>
+    </div>
+    <div class="footer-bottom"><p>© 2026 Yakima Foursquare Church</p></div>
+  </footer>
+</div>
+
+<div class="page" id="page-team">
+  <!-- Portraits on open canvas rather than a card grid. Both design audits
+       flagged the three-equal-column card row as the most recognisable
+       AI-layout tell, so this uses spacing and alignment to group instead of
+       boxes and borders. -->
+  <div class="page-hd">
+    <h1>The people here</h1>
+    <p class="page-hd-sub">Faces you&rsquo;ll actually see on a Sunday. Anyone here is glad to be asked a question.</p>
+  </div>
+
+  <section class="tm">
+    <div class="tm-inner">
+      <div class="tm-grid">
+        <figure class="tm-person">
+          <picture>
+            <source type="image/webp" srcset="assets/team/chantal-400.webp 400w, assets/team/chantal-800.webp 800w" sizes="(max-width:1180px) 45vw, 260px">
+            <img src="assets/team/chantal-400.jpg" srcset="assets/team/chantal-400.jpg 400w, assets/team/chantal-800.jpg 800w" sizes="(max-width:1180px) 45vw, 260px" width="400" height="533" loading="lazy" decoding="async" alt="Chantal Edler, Lead Pastor at Yakima Foursquare Church">
+          </picture>
+          <figcaption>
+            <p class="tm-name">Chantal Edler</p>
+            <p class="tm-role">Lead Pastor</p>
+          </figcaption>
+        </figure>
+        <figure class="tm-person">
+          <picture>
+            <source type="image/webp" srcset="assets/team/mel-400.webp 400w, assets/team/mel-800.webp 800w" sizes="(max-width:1180px) 45vw, 260px">
+            <img src="assets/team/mel-400.jpg" srcset="assets/team/mel-400.jpg 400w, assets/team/mel-800.jpg 800w" sizes="(max-width:1180px) 45vw, 260px" width="400" height="533" loading="lazy" decoding="async" alt="Mellanie Hunt, Executive Pastor at Yakima Foursquare Church">
+          </picture>
+          <figcaption>
+            <p class="tm-name">Mellanie Hunt</p>
+            <p class="tm-role">Executive Pastor</p>
+          </figcaption>
+        </figure>
+        <figure class="tm-person">
+          <picture>
+            <source type="image/webp" srcset="assets/team/zac-400.webp 400w, assets/team/zac-800.webp 800w" sizes="(max-width:1180px) 45vw, 260px">
+            <img src="assets/team/zac-400.jpg" srcset="assets/team/zac-400.jpg 400w, assets/team/zac-800.jpg 800w" sizes="(max-width:1180px) 45vw, 260px" width="400" height="533" loading="lazy" decoding="async" alt="Zac Bogar, Associate Pastor at Yakima Foursquare Church">
+          </picture>
+          <figcaption>
+            <p class="tm-name">Zac Bogar</p>
+            <p class="tm-role">Associate Pastor</p>
+          </figcaption>
+        </figure>
+        <figure class="tm-person">
+          <picture>
+            <source type="image/webp" srcset="assets/team/gordy-400.webp 400w, assets/team/gordy-800.webp 800w" sizes="(max-width:1180px) 45vw, 260px">
+            <img src="assets/team/gordy-400.jpg" srcset="assets/team/gordy-400.jpg 400w, assets/team/gordy-800.jpg 800w" sizes="(max-width:1180px) 45vw, 260px" width="400" height="533" loading="lazy" decoding="async" alt="Gordy Byrd, Care Pastor at Yakima Foursquare Church">
+          </picture>
+          <figcaption>
+            <p class="tm-name">Gordy Byrd</p>
+            <p class="tm-role">Care Pastor</p>
+          </figcaption>
+        </figure>
+        <figure class="tm-person">
+          <picture>
+            <source type="image/webp" srcset="assets/team/cheree-400.webp 400w, assets/team/cheree-800.webp 800w" sizes="(max-width:1180px) 45vw, 260px">
+            <img src="assets/team/cheree-400.jpg" srcset="assets/team/cheree-400.jpg 400w, assets/team/cheree-800.jpg 800w" sizes="(max-width:1180px) 45vw, 260px" width="400" height="533" loading="lazy" decoding="async" alt="Cheree Hayes, Discipleship Director at Yakima Foursquare Church">
+          </picture>
+          <figcaption>
+            <p class="tm-name">Cheree Hayes</p>
+            <p class="tm-role">Discipleship Director</p>
+          </figcaption>
+        </figure>
+        <figure class="tm-person">
+          <picture>
+            <source type="image/webp" srcset="assets/team/austin-400.webp 400w, assets/team/austin-800.webp 800w" sizes="(max-width:1180px) 45vw, 260px">
+            <img src="assets/team/austin-400.jpg" srcset="assets/team/austin-400.jpg 400w, assets/team/austin-800.jpg 800w" sizes="(max-width:1180px) 45vw, 260px" width="400" height="533" loading="lazy" decoding="async" alt="Austin Holman, Family Ministries Pastor at Yakima Foursquare Church">
+          </picture>
+          <figcaption>
+            <p class="tm-name">Austin Holman</p>
+            <p class="tm-role">Family Ministries Pastor</p>
+          </figcaption>
+        </figure>
+        <figure class="tm-person">
+          <picture>
+            <source type="image/webp" srcset="assets/team/marri-400.webp 400w, assets/team/marri-800.webp 800w" sizes="(max-width:1180px) 45vw, 260px">
+            <img src="assets/team/marri-400.jpg" srcset="assets/team/marri-400.jpg 400w, assets/team/marri-800.jpg 800w" sizes="(max-width:1180px) 45vw, 260px" width="400" height="533" loading="lazy" decoding="async" alt="Marri Dahir, Worship Pastor at Yakima Foursquare Church">
+          </picture>
+          <figcaption>
+            <p class="tm-name">Marri Dahir</p>
+            <p class="tm-role">Worship Pastor</p>
+          </figcaption>
+        </figure>
+        <figure class="tm-person">
+          <picture>
+            <source type="image/webp" srcset="assets/team/adam-400.webp 400w, assets/team/adam-800.webp 800w" sizes="(max-width:1180px) 45vw, 260px">
+            <img src="assets/team/adam-400.jpg" srcset="assets/team/adam-400.jpg 400w, assets/team/adam-800.jpg 800w" sizes="(max-width:1180px) 45vw, 260px" width="400" height="533" loading="lazy" decoding="async" alt="Adam Dahir, Communications and Production Pastor at Yakima Foursquare Church">
+          </picture>
+          <figcaption>
+            <p class="tm-name">Adam Dahir</p>
+            <p class="tm-role">Communications &amp; Production Pastor</p>
+          </figcaption>
+        </figure>
+        <figure class="tm-person">
+          <picture>
+            <source type="image/webp" srcset="assets/team/delinda-400.webp 400w, assets/team/delinda-800.webp 800w" sizes="(max-width:1180px) 45vw, 260px">
+            <img src="assets/team/delinda-400.jpg" srcset="assets/team/delinda-400.jpg 400w, assets/team/delinda-800.jpg 800w" sizes="(max-width:1180px) 45vw, 260px" width="400" height="533" loading="lazy" decoding="async" alt="Dr. Delinda Higgins, Assisting Minister at Yakima Foursquare Church">
+          </picture>
+          <figcaption>
+            <p class="tm-name">Dr. Delinda Higgins</p>
+            <p class="tm-role">Assisting Minister</p>
+          </figcaption>
+        </figure>
+        <figure class="tm-person">
+          <picture>
+            <source type="image/webp" srcset="assets/team/bob-400.webp 400w, assets/team/bob-800.webp 800w" sizes="(max-width:1180px) 45vw, 260px">
+            <img src="assets/team/bob-400.jpg" srcset="assets/team/bob-400.jpg 400w, assets/team/bob-800.jpg 800w" sizes="(max-width:1180px) 45vw, 260px" width="400" height="533" loading="lazy" decoding="async" alt="Bob Scheidegger, Assisting Minister at Yakima Foursquare Church">
+          </picture>
+          <figcaption>
+            <p class="tm-name">Bob Scheidegger</p>
+            <p class="tm-role">Assisting Minister</p>
+          </figcaption>
+        </figure>
+        <figure class="tm-person">
+          <picture>
+            <source type="image/webp" srcset="assets/team/debbie-400.webp 400w, assets/team/debbie-800.webp 800w" sizes="(max-width:1180px) 45vw, 260px">
+            <img src="assets/team/debbie-400.jpg" srcset="assets/team/debbie-400.jpg 400w, assets/team/debbie-800.jpg 800w" sizes="(max-width:1180px) 45vw, 260px" width="400" height="533" loading="lazy" decoding="async" alt="Debbie Byrd, Office Manager at Yakima Foursquare Church">
+          </picture>
+          <figcaption>
+            <p class="tm-name">Debbie Byrd</p>
+            <p class="tm-role">Office Manager</p>
+          </figcaption>
+        </figure>
+        <figure class="tm-person">
+          <picture>
+            <source type="image/webp" srcset="assets/team/sean-400.webp 400w, assets/team/sean-800.webp 800w" sizes="(max-width:1180px) 45vw, 260px">
+            <img src="assets/team/sean-400.jpg" srcset="assets/team/sean-400.jpg 400w, assets/team/sean-800.jpg 800w" sizes="(max-width:1180px) 45vw, 260px" width="400" height="533" loading="lazy" decoding="async" alt="Sean Mickle, Facilities Manager at Yakima Foursquare Church">
+          </picture>
+          <figcaption>
+            <p class="tm-name">Sean Mickle</p>
+            <p class="tm-role">Facilities Manager</p>
+          </figcaption>
+        </figure>
+      </div>
+
+      <div class="tm-foot">
+        <p class="tm-foot-p">Not sure who to talk to? Start anywhere &mdash; we&rsquo;ll point you to the right person.</p>
+        <a class="tm-foot-cta" href="#" onclick="showPage('nextsteps');return false;">Get in touch</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-top">
+      <div><p class="footer-brand">Yakima Foursquare</p><p class="footer-desc">Yakima, Washington</p></div>
+      <div class="footer-col"><p class="footer-col-head">Pages</p><button onclick="showPage('home')">Home</button><button onclick="showPage('sermons')">Sermons</button><button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('team')">Our Team</button></div>
       <div class="footer-col"><p class="footer-col-head">Connect</p><a href="https://www.youtube.com/@YakimaFoursquareChurch" target="_blank" rel="noopener">YouTube</a><a href="https://www.instagram.com/yakimafoursquare" target="_blank" rel="noopener">Instagram</a></div>
       <div class="footer-col"><p class="footer-col-head">Visit</p><a href="#" onclick="showPage('nextsteps');return false;">Sundays 9 &amp; 10:30 AM</a></div>
     </div>
@@ -2600,7 +2760,7 @@
   <footer>
     <div class="footer-top">
       <div><p class="footer-brand">Yakima Foursquare</p><p class="footer-desc">Yakima, Washington</p></div>
-      <div class="footer-col"><p class="footer-col-head">Pages</p><button onclick="showPage('home')">Home</button><button onclick="showPage('sermons')">Sermons</button><button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('college')">College</button></div>
+      <div class="footer-col"><p class="footer-col-head">Pages</p><button onclick="showPage('home')">Home</button><button onclick="showPage('sermons')">Sermons</button><button onclick="showPage('believe')">Beliefs</button><button onclick="showPage('team')">Our Team</button><button onclick="showPage('college')">College</button></div>
       <div class="footer-col"><p class="footer-col-head">Connect</p><a href="https://www.youtube.com/@YakimaFoursquareChurch" target="_blank" rel="noopener">YouTube</a><a href="https://www.instagram.com/yakimafoursquare" target="_blank" rel="noopener">Instagram</a></div>
       <div class="footer-col"><p class="footer-col-head">Visit</p><a href="#" onclick="showPage('nextsteps');return false;">Sundays 9 &amp; 10:30 AM</a></div>
     </div>
@@ -2630,7 +2790,7 @@
 
 
 
-  <script src="app.js?v=1787177020" defer></script>
-  <script src="ui.js?v=1787177020" defer></script>
+  <script src="app.js?v=1787247751" defer></script>
+  <script src="ui.js?v=1787247751" defer></script>
 </body>
 </html>

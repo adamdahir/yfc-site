@@ -1,0 +1,36 @@
+name: Site checks
+
+# Runs on every push and pull request. If these fail, the change should not
+# reach the live site.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci || npm install
+      - run: npx playwright install --with-deps chromium
+
+      - name: Run site checks
+        run: npx playwright test
+
+      - name: Impeccable design detector
+        # Advisory only. It reads CSS statically, so it cannot resolve custom
+        # properties and reports false contrast failures; Playwright measures
+        # the real composited values and is the check that gates a deploy.
+        run: npx --yes impeccable detect index.html styles.css || true
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14

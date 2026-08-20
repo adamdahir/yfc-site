@@ -27,13 +27,10 @@ function parseFeed(xml) {
     };
     const id = pick('yt:videoId');
     if (!id) continue;
-    entries.push({
-      id,
-      title: decode(pick('title')),
-      published: pick('published'),
-      thumbnail: `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
-      url: `https://www.youtube.com/watch?v=${id}`
-    });
+    /* Only what cannot be derived. The thumbnail and watch URLs are both
+       pure functions of the id, so sending them roughly tripled the payload
+       for zero extra information. The client rebuilds them. */
+    entries.push({ id, title: decode(pick('title')), published: pick('published').slice(0, 10) });
   }
   return entries;
 }
@@ -49,7 +46,9 @@ export default async function handler() {
     const res = await fetch(FEED, { headers: { 'User-Agent': 'yakimafoursquare.org' } });
     if (!res.ok) throw new Error(`feed responded ${res.status}`);
 
-    const items = parseFeed(await res.text());
+    /* The feed returns 15; the page renders at most 9. Sending the rest is
+       bytes nobody reads. */
+    const items = parseFeed(await res.text()).slice(0, 9);
     if (!items.length) throw new Error('feed parsed but contained no videos');
 
     return new Response(JSON.stringify({ items }), {
