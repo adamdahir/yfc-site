@@ -5289,15 +5289,43 @@ a[href], button, [role="button"], input, select, textarea, .srm-filter, .pw-tab,
   .srm-page-title,
   .srm-empty-h,
   .tm-foot-h {
-    font-family: var(--font-display) !important;
-    text-transform: uppercase;
-    letter-spacing: 0.02em !important;
-    line-height: 1.0;
-    font-weight: 400;
+    font-family: var(--font-ui) !important;
+    text-transform: none;
+    letter-spacing: -0.02em !important;
+    line-height: 1.05;
+    font-weight: 600;
   }
 
-  /* Long display lines in caps need a little more air between them. */
-  .lp-h1, .home-hero h1 { line-height: 1.04; }
+  /* Display sizes need tighter tracking than body copy. Inter's default
+     spacing is tuned for text, and looks loose set large. */
+  .lp-h1, .home-hero h1 { line-height: 1.02; letter-spacing: -0.03em !important; }
+
+  /* ── JENSON AS ACCENT ───────────────────────────────────────────────
+     The serif now appears only on the small labels that introduce a
+     section, set in caps with positive tracking. Caps need positive
+     tracking; the negative values above are correct for mixed case and
+     wrong for capitals. Small caps need more than large ones, hence
+     0.12em here against the display sizes' -0.02em.
+
+     Used this way the serif is punctuation rather than voice, which is
+     what makes it read as deliberate next to a page of Inter. */
+  .section-label,
+  .section-label-bracket,
+  .series-label,
+  .care-eyebrow,
+  .lp-label,
+  .lp-eyebrow,
+  .min-cat-label,
+  .min-edu-label,
+  .min-dir-head-label,
+  .pathsteps-eyebrow,
+  .manifesto-eyebrow,
+  .srm-eyebrow {
+    font-family: var(--font-display) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.12em !important;
+    font-weight: 400;
+  }
 
   /* ── Mid-scale headings move to Inter. This is where the balance comes
      from: card titles, names and list items were all Jenson, which is what
