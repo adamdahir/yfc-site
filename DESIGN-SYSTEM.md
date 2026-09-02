@@ -43,7 +43,7 @@ Müller-Brockmann's point: the grid settles the boring decisions in advance so j
 Plus `clamp()` for display sizes, and 120px for the pullquote mark.
 
 - Floor is **12px** — nothing smaller anywhere (was 8px).
-- Two families: **adobe-jenson-pro** (display/serif), **Inter** (UI/body). Space Mono is metadata only and is a candidate for removal.
+- Faces: **adobe-jenson-pro-caption** (display, all caps), **Inter** (everything else), **adobe-jenson-pro** italic (manifesto only). See "the two-voice split" below — this line used to say Jenson was the display/serif face generally, which is no longer true. Space Mono is metadata only and a candidate for removal.
 - Hierarchy comes from size and weight, not from color or ornament.
 
 **Was:** 28 sizes including 8, 9, 9.5, 10, 10.5 — differences no one reads as intentional.
@@ -60,6 +60,40 @@ Plus `clamp()` for display sizes, and 120px for the pullquote mark.
 ```
 
 **Was:** 37 values.
+
+---
+
+## Type — the two-voice split
+
+Revised after the first version put Jenson on every headline — 38 display-size
+declarations, so however the counts looked it read as one voice.
+
+The split is **by scale**, not by section:
+
+| | Face | Treatment |
+|---|---|---|
+| Display | **Adobe Jenson Pro CAPTION** | ALL CAPS, `+0.02em`, `line-height 1.0` |
+| Everything else | **Inter** | sentence case |
+
+**Why the Caption cut.** It is the optical size drawn for small text — larger
+x-height, sturdier strokes, looser fit than the display cut. Set large and in
+capitals it reads inscriptional rather than bookish: lettering over a door
+rather than a page from a book. It gives the serif a job instead of a mood.
+
+**Capitals need positive tracking.** The original display rules used `-0.02em`,
+correct for lowercase and wrong for caps. Large caps need less than small caps,
+hence `0.02em` against the `0.1em` used on small labels. Caps have no
+descenders, so leading tightens too.
+
+**Moved to Inter** to create the balance: card titles, person names, degree
+names, track names, cost figures, the who-this-is-for lines. Twelve rules.
+
+**One deliberate exception:** `.manifesto-line` keeps the original Jenson
+*italic*. It is the only passage on the site that is poetry rather than
+interface. Capitals flatten it, and the Caption cut has no italic worth using.
+
+**Do not put Jenson back on mid-scale headings.** That is the change this
+section exists to record.
 
 ---
 

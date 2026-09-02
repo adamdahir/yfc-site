@@ -2127,7 +2127,13 @@ footer { background: var(--ink); padding: 128px 32px 48px; }
   padding: 8px 16px;
   border: 1px solid rgba(22,19,15,0.15);
   background: none;
-  color: var(--text-light);
+  /* --text-light is fine on the page canvas (6.13:1 on --u-50) but these
+     buttons sit on .events-bar, which is --u-200 #DDCDAC. Against that tan the
+     same token drops to 4.34:1 — under AA, and the only place on the site
+     where --text-light lands on a surface this dark. --text-mid gives 5.33:1
+     and is the next stop on the existing ramp, so nothing new is introduced.
+     Measured, not eyeballed; the ratio is why the value changed. */
+  color: var(--text-mid);
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -3416,15 +3422,30 @@ p, .desc, .footer-desc,
 }
 .pw-stage-card:hover { transform: translateY(-4px); filter: brightness(1.08); }
 
-/* Stage detail sections — scroll reveal */
+/* Stage detail sections — scroll reveal.
+
+   These three sections used to start at opacity: 0 and wait for an
+   IntersectionObserver to add .pw-visible. That is the failure this project
+   has now hit five times, and it breaks the standing rule: nothing may depend
+   on an animation to be visible. Entrance is motion only.
+
+   Concretely, it meant ns-belong, ns-contribute and ns-multiply were fully
+   transparent until either the observer fired or the 2.5s ui.js safety net
+   caught them — so a visitor who landed and read for two seconds, or anyone
+   whose IntersectionObserver never fired, saw three empty bands. The suite
+   caught it as "invisible text on nextsteps"; it waits 1.65s, inside that gap.
+
+   Motion alone gives the same reveal and cannot hide anything. The safety net
+   in ui.js stays as belt-and-braces, but nothing now relies on it. */
 .pw-detail {
-  opacity: 0;
   transform: translateY(24px);
-  transition: opacity 0.55s ease, transform 0.55s ease;
+  transition: transform 0.55s ease;
 }
 .pw-detail.pw-visible {
-  opacity: 1;
   transform: translateY(0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .pw-detail, .pw-detail.pw-visible { transform: none; transition: none; }
 }
 
 /* Develop detail cards */
@@ -5231,4 +5252,148 @@ a[href], button, [role="button"], input, select, textarea, .srm-filter, .pw-tab,
      collided. Space them, and stop the headline hugging its own baseline. */
   .page-hd h1 { line-height: 1.02; margin-bottom: 24px; padding-bottom: 0.06em; }
   .page-hd-sub { margin-top: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   TYPOGRAPHIC REBALANCE
+   Jenson had every headline on the site — 38 display-size declarations —
+   so however the counts looked, it read as Jenson everywhere.
+
+   New split, by scale:
+     DISPLAY  → Adobe Jenson Pro CAPTION, all caps. Rare and ceremonial.
+     EVERYTHING ELSE → Inter.
+
+   Why Caption: it is the optical size cut for small text, so it carries a
+   larger x-height and sturdier strokes than the display cut. Set large and
+   in capitals it reads inscriptional — closer to lettering carved over a
+   door than to a book page. That suits a church and it stops the serif
+   feeling merely decorative.
+
+   Capitals need POSITIVE tracking; the old display rules used -0.02em,
+   which is correct for lowercase and wrong for caps. Large caps need less
+   than small caps, hence 0.02em rather than the 0.1em used on labels.
+   Caps have no descenders, so leading tightens too.
+   ═══════════════════════════════════════════════════════════════════ */
+@layer utilities {
+  :root {
+    --font-display: 'adobe-jenson-pro-caption', 'adobe-jenson-pro', Georgia, serif;
+    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .home-hero h1,
+  .page-hd h1,
+  .section-heading,
+  .lp-h1, .lp-h2, .lp-cta-h,
+  .care-h,
+  .giv-h,
+  .srm-page-title,
+  .srm-empty-h,
+  .tm-foot-h {
+    font-family: var(--font-display) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.02em !important;
+    line-height: 1.0;
+    font-weight: 400;
+  }
+
+  /* Long display lines in caps need a little more air between them. */
+  .lp-h1, .home-hero h1 { line-height: 1.04; }
+
+  /* ── Mid-scale headings move to Inter. This is where the balance comes
+     from: card titles, names and list items were all Jenson, which is what
+     made the serif feel like the whole voice rather than a punctuation. ── */
+  .tm-name,
+  .giv-reason h3,
+  .lp-half-h,
+  .lp-year-h,
+  .lp-track-name,
+  .lp-deg-name,
+  .lp-cost-v,
+  .care-situation,
+  .lp-deg-ul li,
+  .lp-who-item,
+  .lp-goal {
+    font-family: var(--font-ui) !important;
+    letter-spacing: -0.01em !important;
+    text-transform: none;
+  }
+  .tm-name, .giv-reason h3, .lp-half-h, .lp-year-h, .lp-track-name { font-weight: 600; }
+  .lp-deg-name, .lp-cost-v { font-weight: 600; }
+  .care-situation, .lp-who-item, .lp-goal { font-weight: 400; line-height: 1.4; }
+  .lp-deg-ul li { font-weight: 500; }
+
+  /* The manifesto keeps the ORIGINAL Jenson italic. It is the one passage on
+     the site that is poetry rather than interface — capitals would flatten it
+     and the Caption cut has no italic worth using. Deliberate exception. */
+  .manifesto-line { font-family: 'adobe-jenson-pro', Georgia, serif !important; text-transform: none; }
+}
+
+@layer utilities {
+  /* ── JOURNEY STRIPS ────────────────────────────────────────────────
+     These are the three doorways into the site and they were rendering as
+     a cramped text list occupying the left third, with two thirds of the
+     row empty. Now a proper full-width row: index and title left, action
+     hard right, a rule between each, and enough height to feel like a
+     destination rather than a menu item. */
+  .home-strips { background: var(--u-50); }
+
+  .home-strip {
+    display: grid !important;
+    grid-template-columns: 64px 1fr auto;
+    align-items: center;
+    gap: 32px;
+    padding: 48px 8% !important;
+    min-height: 132px;
+    border-bottom: 1px solid var(--u-200) !important;
+    transition: background .25s ease, padding-left .25s ease;
+  }
+  .home-strip:last-child { border-bottom: none !important; }
+  .home-strip:hover { background: var(--u-150); }
+
+  /* meta was a nested flex holding both number and title; unwrap it so the
+     grid can place them itself */
+  .home-strip-meta { display: contents !important; }
+
+  .home-strip-counter {
+    font-family: var(--font-ui);
+    font-size: 12px; font-weight: 700; letter-spacing: 0.18em;
+    color: var(--text-light) !important;
+    align-self: center;
+  }
+
+  .home-strip-title {
+    font-family: var(--font-display) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    font-size: clamp(28px, 3.4vw, 46px);
+    font-weight: 400;
+    line-height: 1.0;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .home-strip-cta {
+    justify-self: end;
+    font-family: var(--font-ui);
+    font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--amber-700) !important;
+    white-space: nowrap;
+    display: inline-flex; align-items: center; min-height: 24px;
+  }
+  .home-strip:hover .home-strip-cta { color: var(--u-950) !important; }
+
+  /* the in-page anchor helper is a layout participant in a grid — take it out */
+  .home-strip > div[id] { position: absolute !important; }
+
+  @media (max-width: 1180px) {
+    .home-strip {
+      grid-template-columns: 40px 1fr;
+      gap: 8px 16px;
+      padding: 28px 24px !important;
+      min-height: 104px;
+    }
+    .home-strip-cta { grid-column: 2; justify-self: start; }
+    .home-strip-title { font-size: 26px; }
+  }
 }

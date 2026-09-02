@@ -1,0 +1,256 @@
+From f49b59a807dacee83d7724e791fbd08ebffc5fcc Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Fri, 21 Aug 2026 00:31:43 +0000
+Subject: [PATCH 1/2] Typographic rebalance and journey strips
+
+Work in progress from a previous session, committed as-is and unreviewed so
+that the bug fixes that follow sit on a clean base rather than being mixed
+into one indistinguishable diff.
+
+- Display type split: Jenson Caption in caps for display scale only,
+  Inter for mid-scale headings that were previously all Jenson.
+- Manifesto keeps the original Jenson italic as a deliberate exception.
+- Home journey strips relaid out as a full-width grid row.
+
+Not verified by me. Review or drop this commit independently of the next one.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012Uz6js2Gvt177WmPyzMien
+---
+ DESIGN-SYSTEM.md |  36 +++++++++++-
+ index.html       |   6 +-
+ styles.css       | 144 +++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 182 insertions(+), 4 deletions(-)
+
+diff --git a/DESIGN-SYSTEM.md b/DESIGN-SYSTEM.md
+index f553553..a2753dc 100644
+--- a/DESIGN-SYSTEM.md
++++ b/DESIGN-SYSTEM.md
+@@ -43,7 +43,7 @@ Müller-Brockmann's point: the grid settles the boring decisions in advance so j
+ Plus `clamp()` for display sizes, and 120px for the pullquote mark.
+ 
+ - Floor is **12px** — nothing smaller anywhere (was 8px).
+-- Two families: **adobe-jenson-pro** (display/serif), **Inter** (UI/body). Space Mono is metadata only and is a candidate for removal.
++- Faces: **adobe-jenson-pro-caption** (display, all caps), **Inter** (everything else), **adobe-jenson-pro** italic (manifesto only). See "the two-voice split" below — this line used to say Jenson was the display/serif face generally, which is no longer true. Space Mono is metadata only and a candidate for removal.
+ - Hierarchy comes from size and weight, not from color or ornament.
+ 
+ **Was:** 28 sizes including 8, 9, 9.5, 10, 10.5 — differences no one reads as intentional.
+@@ -63,6 +63,40 @@ Plus `clamp()` for display sizes, and 120px for the pullquote mark.
+ 
+ ---
+ 
++## Type — the two-voice split
++
++Revised after the first version put Jenson on every headline — 38 display-size
++declarations, so however the counts looked it read as one voice.
++
++The split is **by scale**, not by section:
++
++| | Face | Treatment |
++|---|---|---|
++| Display | **Adobe Jenson Pro CAPTION** | ALL CAPS, `+0.02em`, `line-height 1.0` |
++| Everything else | **Inter** | sentence case |
++
++**Why the Caption cut.** It is the optical size drawn for small text — larger
++x-height, sturdier strokes, looser fit than the display cut. Set large and in
++capitals it reads inscriptional rather than bookish: lettering over a door
++rather than a page from a book. It gives the serif a job instead of a mood.
++
++**Capitals need positive tracking.** The original display rules used `-0.02em`,
++correct for lowercase and wrong for caps. Large caps need less than small caps,
++hence `0.02em` against the `0.1em` used on small labels. Caps have no
++descenders, so leading tightens too.
++
++**Moved to Inter** to create the balance: card titles, person names, degree
++names, track names, cost figures, the who-this-is-for lines. Twelve rules.
++
++**One deliberate exception:** `.manifesto-line` keeps the original Jenson
++*italic*. It is the only passage on the site that is poetry rather than
++interface. Capitals flatten it, and the Caption cut has no italic worth using.
++
++**Do not put Jenson back on mid-scale headings.** That is the change this
++section exists to record.
++
++---
++
+ ## Colour — one ladder, one accent
+ 
+ Single umber ramp, 13 stops, hues locked 24°–42°. Value does the work, not hue.
+diff --git a/index.html b/index.html
+index 44c7624..ea53e70 100644
+--- a/index.html
++++ b/index.html
+@@ -232,7 +232,7 @@
+   <link rel="preload" as="image" href="assets/hero-a9a0118a.jpg">
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+-  <link rel="stylesheet" href="styles.css?v=1787247751">
++  <link rel="stylesheet" href="styles.css?v=1787268661">
+   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%231E2D1E'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-size='28' font-weight='700' fill='%23E8E0D0' text-anchor='middle' letter-spacing='-1'%3EYF%3C/text%3E%3C/svg%3E" type="image/svg+xml">
+ </head>
+ <body>
+@@ -2790,7 +2790,7 @@
+ 
+ 
+ 
+-  <script src="app.js?v=1787247751" defer></script>
+-  <script src="ui.js?v=1787247751" defer></script>
++  <script src="app.js?v=1787268661" defer></script>
++  <script src="ui.js?v=1787268661" defer></script>
+ </body>
+ </html>
+diff --git a/styles.css b/styles.css
+index b070e7a..7e95578 100644
+--- a/styles.css
++++ b/styles.css
+@@ -5232,3 +5232,147 @@ a[href], button, [role="button"], input, select, textarea, .srm-filter, .pw-tab,
+   .page-hd h1 { line-height: 1.02; margin-bottom: 24px; padding-bottom: 0.06em; }
+   .page-hd-sub { margin-top: 0; }
+ }
++
++/* ═══════════════════════════════════════════════════════════════════
++   TYPOGRAPHIC REBALANCE
++   Jenson had every headline on the site — 38 display-size declarations —
++   so however the counts looked, it read as Jenson everywhere.
++
++   New split, by scale:
++     DISPLAY  → Adobe Jenson Pro CAPTION, all caps. Rare and ceremonial.
++     EVERYTHING ELSE → Inter.
++
++   Why Caption: it is the optical size cut for small text, so it carries a
++   larger x-height and sturdier strokes than the display cut. Set large and
++   in capitals it reads inscriptional — closer to lettering carved over a
++   door than to a book page. That suits a church and it stops the serif
++   feeling merely decorative.
++
++   Capitals need POSITIVE tracking; the old display rules used -0.02em,
++   which is correct for lowercase and wrong for caps. Large caps need less
++   than small caps, hence 0.02em rather than the 0.1em used on labels.
++   Caps have no descenders, so leading tightens too.
++   ═══════════════════════════════════════════════════════════════════ */
++@layer utilities {
++  :root {
++    --font-display: 'adobe-jenson-pro-caption', 'adobe-jenson-pro', Georgia, serif;
++    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
++  }
++
++  .home-hero h1,
++  .page-hd h1,
++  .section-heading,
++  .lp-h1, .lp-h2, .lp-cta-h,
++  .care-h,
++  .giv-h,
++  .srm-page-title,
++  .srm-empty-h,
++  .tm-foot-h {
++    font-family: var(--font-display) !important;
++    text-transform: uppercase;
++    letter-spacing: 0.02em !important;
++    line-height: 1.0;
++    font-weight: 400;
++  }
++
++  /* Long display lines in caps need a little more air between them. */
++  .lp-h1, .home-hero h1 { line-height: 1.04; }
++
++  /* ── Mid-scale headings move to Inter. This is where the balance comes
++     from: card titles, names and list items were all Jenson, which is what
++     made the serif feel like the whole voice rather than a punctuation. ── */
++  .tm-name,
++  .giv-reason h3,
++  .lp-half-h,
++  .lp-year-h,
++  .lp-track-name,
++  .lp-deg-name,
++  .lp-cost-v,
++  .care-situation,
++  .lp-deg-ul li,
++  .lp-who-item,
++  .lp-goal {
++    font-family: var(--font-ui) !important;
++    letter-spacing: -0.01em !important;
++    text-transform: none;
++  }
++  .tm-name, .giv-reason h3, .lp-half-h, .lp-year-h, .lp-track-name { font-weight: 600; }
++  .lp-deg-name, .lp-cost-v { font-weight: 600; }
++  .care-situation, .lp-who-item, .lp-goal { font-weight: 400; line-height: 1.4; }
++  .lp-deg-ul li { font-weight: 500; }
++
++  /* The manifesto keeps the ORIGINAL Jenson italic. It is the one passage on
++     the site that is poetry rather than interface — capitals would flatten it
++     and the Caption cut has no italic worth using. Deliberate exception. */
++  .manifesto-line { font-family: 'adobe-jenson-pro', Georgia, serif !important; text-transform: none; }
++}
++
++@layer utilities {
++  /* ── JOURNEY STRIPS ────────────────────────────────────────────────
++     These are the three doorways into the site and they were rendering as
++     a cramped text list occupying the left third, with two thirds of the
++     row empty. Now a proper full-width row: index and title left, action
++     hard right, a rule between each, and enough height to feel like a
++     destination rather than a menu item. */
++  .home-strips { background: var(--u-50); }
++
++  .home-strip {
++    display: grid !important;
++    grid-template-columns: 64px 1fr auto;
++    align-items: center;
++    gap: 32px;
++    padding: 48px 8% !important;
++    min-height: 132px;
++    border-bottom: 1px solid var(--u-200) !important;
++    transition: background .25s ease, padding-left .25s ease;
++  }
++  .home-strip:last-child { border-bottom: none !important; }
++  .home-strip:hover { background: var(--u-150); }
++
++  /* meta was a nested flex holding both number and title; unwrap it so the
++     grid can place them itself */
++  .home-strip-meta { display: contents !important; }
++
++  .home-strip-counter {
++    font-family: var(--font-ui);
++    font-size: 12px; font-weight: 700; letter-spacing: 0.18em;
++    color: var(--text-light) !important;
++    align-self: center;
++  }
++
++  .home-strip-title {
++    font-family: var(--font-display) !important;
++    text-transform: uppercase;
++    letter-spacing: 0.02em;
++    font-size: clamp(28px, 3.4vw, 46px);
++    font-weight: 400;
++    line-height: 1.0;
++    color: var(--text);
++    margin: 0;
++  }
++
++  .home-strip-cta {
++    justify-self: end;
++    font-family: var(--font-ui);
++    font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
++    text-transform: uppercase;
++    color: var(--amber-700) !important;
++    white-space: nowrap;
++    display: inline-flex; align-items: center; min-height: 24px;
++  }
++  .home-strip:hover .home-strip-cta { color: var(--u-950) !important; }
++
++  /* the in-page anchor helper is a layout participant in a grid — take it out */
++  .home-strip > div[id] { position: absolute !important; }
++
++  @media (max-width: 1180px) {
++    .home-strip {
++      grid-template-columns: 40px 1fr;
++      gap: 8px 16px;
++      padding: 28px 24px !important;
++      min-height: 104px;
++    }
++    .home-strip-cta { grid-column: 2; justify-self: start; }
++    .home-strip-title { font-size: 26px; }
++  }
++}
+-- 
+2.43.0
+

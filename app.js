@@ -8,17 +8,36 @@ function showPage(id) {
   if (panel) {
     panel.classList.add('entering');
     setTimeout(function() {
-      _doShowPage(id);
-      panel.classList.add('leaving');
-      panel.classList.remove('entering');
-      setTimeout(function() {
-        panel.classList.remove('leaving');
-        _pageTransitioning = false;
-      }, 380);
+      /* try/finally is load-bearing, not defensive habit. The panel is an
+         opaque full-viewport element at z-index 9999. If anything inside
+         _doShowPage throws, the two lines that retract it never run, and the
+         site is a permanent black screen with _pageTransitioning stuck true —
+         which also kills every future navigation. That is exactly what
+         happened when the jsdelivr CDN was unreachable and heroEntrance hit an
+         undefined `anime`. The panel must retract whether the page switch
+         succeeded or not: a page with no transition is recoverable, a black
+         screen is not. */
+      try {
+        _doShowPage(id);
+      } catch (e) {
+        if (window.console) console.error('showPage failed, retracting panel anyway:', e);
+      } finally {
+        panel.classList.add('leaving');
+        panel.classList.remove('entering');
+        setTimeout(function() {
+          panel.classList.remove('leaving');
+          _pageTransitioning = false;
+        }, 380);
+      }
     }, 260);
   } else {
-    _doShowPage(id);
-    _pageTransitioning = false;
+    try {
+      _doShowPage(id);
+    } catch (e) {
+      if (window.console) console.error('showPage failed:', e);
+    } finally {
+      _pageTransitioning = false;
+    }
   }
 }
 function _doShowPage(id) {
@@ -218,14 +237,23 @@ function navToPage(id, anchor) { closeMenu(); setTimeout(function() { showPage(i
       observed.add(entry.target);
       const el = entry.target;
       const delay = parseInt(el.dataset.delay || '0');
-      if (el.classList.contains('yfc-fade')) {
-        anime({ targets: el, opacity: [1,1], translateY: [28,0], duration: 700, delay: delay, easing: 'easeOutCubic' });
-      } else if (el.classList.contains('yfc-fade-left')) {
-        anime({ targets: el, opacity: [1,1], translateX: [-32,0], duration: 700, delay: delay, easing: 'easeOutCubic' });
-      } else if (el.classList.contains('yfc-fade-right')) {
-        anime({ targets: el, opacity: [1,1], translateX: [32,0], duration: 700, delay: delay, easing: 'easeOutCubic' });
-      } else if (el.classList.contains('yfc-scale')) {
-        anime({ targets: el, opacity: [1,1], scale: [0.94,1], duration: 600, delay: delay, easing: 'easeOutQuart' });
+      /* Second unguarded `anime` call site. This one fires from an
+         IntersectionObserver on nearly every section of every page, so with
+         the CDN slow or blocked it threw continuously, not once.
+         As above, skipping is safe precisely because these animate
+         opacity: [1,1] — the entrance is motion, never reveal. The unobserve
+         below stays outside the guard: the element is done either way, and
+         leaving it observed would re-throw on every scroll. */
+      if (typeof anime !== 'undefined') {
+        if (el.classList.contains('yfc-fade')) {
+          anime({ targets: el, opacity: [1,1], translateY: [28,0], duration: 700, delay: delay, easing: 'easeOutCubic' });
+        } else if (el.classList.contains('yfc-fade-left')) {
+          anime({ targets: el, opacity: [1,1], translateX: [-32,0], duration: 700, delay: delay, easing: 'easeOutCubic' });
+        } else if (el.classList.contains('yfc-fade-right')) {
+          anime({ targets: el, opacity: [1,1], translateX: [32,0], duration: 700, delay: delay, easing: 'easeOutCubic' });
+        } else if (el.classList.contains('yfc-scale')) {
+          anime({ targets: el, opacity: [1,1], scale: [0.94,1], duration: 600, delay: delay, easing: 'easeOutQuart' });
+        }
       }
       io.unobserve(el);
     });
@@ -280,6 +308,15 @@ function navToPage(id, anchor) { closeMenu(); setTimeout(function() { showPage(i
   }
 
   function heroEntrance(pageId) {
+    /* Every other anime block on the site is guarded with this check; this one
+       was missed, and _doShowPage calls it on EVERY page switch. With the CDN
+       slow or blocked, `anime` is undefined here, the ReferenceError unwinds
+       out of _doShowPage, and the transition panel never retracts.
+       Bailing out costs only motion: every call below animates
+       opacity: [1,1] — i.e. no opacity change at all — so nothing here is
+       required for content to be visible. That is the site's standing rule and
+       it is what makes returning early safe. */
+    if (typeof anime === 'undefined') return;
     anime({ targets: '#nav .nav-logo', opacity: [1,1], translateY: [-12,0], duration: 800, delay: 100, easing: 'easeOutQuart' });
     anime({ targets: '#nav .nav-right', opacity: [1,1], translateY: [-8,0], duration: 700, delay: 250, easing: 'easeOutCubic' });
     var heroH = document.querySelector('#page-' + pageId + ' h1');
@@ -1709,7 +1746,18 @@ function yfcSubmitForm(formEl, successId) {
     lbls.forEach(function(a,k){ a.classList.toggle('is-on', k===i); });
     rings.forEach(function(a,k){ a.classList.toggle('is-on', k===i); });
     tabs.forEach(function(a,k){ a.classList.toggle('is-on', k===i); a.setAttribute('aria-selected', k===i); });
-    hubN.textContent = s.n; hubT.textContent = s.name; hubS.textContent = s.verb;
+    /* The hub trio is vestigial. An earlier version of this wheel had a centre
+       hub that retitled itself per stage; the Venn redesign replaced it with a
+       static .pw-core / .pw-core-t ("one life") and dropped .pw-hub-n/-t/-s
+       from the markup — but not from here. So show(0) threw on every single
+       page load, which meant the wire() handlers were registered and then the
+       initial show(0) died: no stage highlighted, and the whole right-hand
+       panel (number, verb, title, lede, list, CTA, reference) stayed at
+       whatever the HTML hardcoded. The component has been dead in production,
+       independent of the CDN. Write the hub only if it is actually there. */
+    if (hubN) hubN.textContent = s.n;
+    if (hubT) hubT.textContent = s.name;
+    if (hubS) hubS.textContent = s.verb;
     pNum.textContent = s.n; pVerb.textContent = s.verb;
     pTitle.textContent = s.name; pLede.textContent = s.lede;
     pCta.textContent = s.cta; pCta.setAttribute('href', s.href); pRef.textContent = s.ref;

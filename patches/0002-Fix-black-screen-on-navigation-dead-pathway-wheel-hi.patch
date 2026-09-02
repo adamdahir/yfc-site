@@ -1,0 +1,483 @@
+From 85cb0edadab343e420fa1a39837325204f5a6824 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Fri, 21 Aug 2026 00:31:58 +0000
+Subject: [PATCH 2/2] Fix black-screen on navigation, dead pathway wheel,
+ hidden sections, AA contrast
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Four defects, each verified by rendering rather than by measurement.
+
+1. Any page switch could black-screen the site permanently.
+   _doShowPage calls heroEntrance, which called anime() unguarded — the one
+   anime block on the site missing the typeof check every other one has. With
+   the jsdelivr CDN slow, blocked, or its defer scripts not yet executed, the
+   ReferenceError unwound out of _doShowPage and the two lines that retract
+   the transition panel never ran. That panel is opaque #110F0E at
+   z-index 9999, full viewport, and _pageTransitioning stayed true, killing
+   every subsequent navigation. A second unguarded call site in the
+   IntersectionObserver reveal threw continuously rather than once.
+
+   Guards both call sites and wraps _doShowPage in try/finally so the panel
+   retracts whether the switch succeeded or not. Skipping the animations is
+   safe because every one of them animates opacity: [1,1] — no opacity change.
+   A page without a transition is recoverable; a black screen is not.
+
+2. The pathway wheel had been dead in production.
+   show() wrote to .pw-hub-n/-t/-s, none of which exist in the markup — the
+   Venn redesign dropped the centre hub from the HTML but not the JS. show(0)
+   threw on every page load, so no stage highlighted and the entire panel
+   never populated. Independent of the CDN. Writes the hub only if present.
+
+3. Three Next Steps sections were invisible until scrolled to.
+   .pw-detail started at opacity: 0 behind an IntersectionObserver — the fifth
+   time this project has hidden content behind an animation. Entrance is now
+   motion only, with a prefers-reduced-motion branch. The ui.js safety net
+   stays, but nothing relies on it.
+
+4. Events filter buttons failed WCAG AA.
+   --text-light on the --u-200 events bar measured 4.34:1, the only place on
+   the site that pairing occurs. --text-mid gives 5.33:1 and is the next stop
+   on the existing ramp, so no new value enters the system.
+
+Suite: 69 passed, 1 skipped, 0 failed. Mobile was forced to Chromium because
+WebKit is unavailable in this environment, so mobile is NOT verified on real
+WebKit — see the note at the end of NEXT-SESSION.md.
+
+The reported team-portrait bug does not reproduce; all twelve render. Details
+and the evidence are in NEXT-SESSION.md.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012Uz6js2Gvt177WmPyzMien
+---
+ NEXT-SESSION.md | 155 ++++++++++++++++++++++++++++++++++++++++++++++++
+ START-HERE.md   |  79 ++++++++++++++++++++++++
+ app.js          |  84 ++++++++++++++++++++------
+ styles.css      |  31 ++++++++--
+ 4 files changed, 326 insertions(+), 23 deletions(-)
+ create mode 100644 NEXT-SESSION.md
+ create mode 100644 START-HERE.md
+
+diff --git a/NEXT-SESSION.md b/NEXT-SESSION.md
+new file mode 100644
+index 0000000..33195ad
+--- /dev/null
++++ b/NEXT-SESSION.md
+@@ -0,0 +1,155 @@
++# Pick up here
++
++Last session fixed four defects, all verified by rendering. The full suite is
++green: **69 passed, 1 skipped, 0 failed** (desktop + mobile).
++
++---
++
++## Fixed and verified
++
++### 1. Any page switch could black-screen the site permanently — FIXED
++
++The worst of the four, and it was hiding behind item 2 below.
++
++`_doShowPage` calls `heroEntrance`, which called `anime(...)` **unguarded**.
++Every other anime block on the site is wrapped in
++`typeof anime !== 'undefined'`; this one was missed. When the jsdelivr CDN was
++slow, blocked or simply hadn't finished executing its `defer` scripts, `anime`
++was undefined, the ReferenceError unwound out of `_doShowPage`, and the two
++lines that retract the transition panel never ran.
++
++The panel is opaque `#110F0E` at `z-index: 9999`, full viewport. So the result
++was a **permanent black screen**, plus `_pageTransitioning` stuck `true`, which
++killed every subsequent navigation. Confirmed by stack trace, reproduced on
++every page, and reproduced again from a second unguarded call site in the
++IntersectionObserver reveal (that one fired on nearly every section of every
++page, so it threw continuously rather than once).
++
++Three changes:
++
++- `heroEntrance` returns early when `anime` is undefined.
++- The observer's reveal block is guarded the same way; `io.unobserve` stays
++  outside the guard so it can't re-throw on every scroll.
++- `showPage` wraps `_doShowPage` in **try/finally**. This is the structural
++  one: the panel now retracts whether the page switch succeeded or not. A page
++  with no transition is recoverable; a black screen is not.
++
++Skipping the animations is safe for a specific reason worth keeping in mind —
++every one of those calls animates `opacity: [1,1]`, i.e. no opacity change at
++all. That is the standing rule paying off.
++
++### 2. The pathway wheel has been dead in production — FIXED
++
++`show()` wrote to `.pw-hub-n`, `.pw-hub-t` and `.pw-hub-s`. **None of those
++three exist in the markup.** An earlier wheel had a centre hub that retitled
++itself per stage; the Venn redesign replaced it with a static `.pw-core` /
++`.pw-core-t` ("one life") and dropped the hub from the HTML — but not from the
++JS. So `show(0)` threw on every single page load: no stage highlighted, and the
++entire right-hand panel (number, verb, title, lede, list, CTA, reference) stayed
++at whatever the HTML hardcoded. Independent of the CDN.
++
++Now writes the hub only if it is present.
++
++### 3. Three sections were invisible until scrolled to — FIXED
++
++`.pw-detail` (`ns-belong`, `ns-contribute`, `ns-multiply`) started at
++`opacity: 0` and waited for an IntersectionObserver. **This is the fifth time
++this project has hit the "content hidden behind an animation" bug.** A visitor
++who landed and read for two seconds saw three empty bands; the ui.js safety net
++only catches it at 2.5s.
++
++Entrance is now motion only — `translateY`, no opacity — plus a
++`prefers-reduced-motion` branch. The ui.js safety net stays as belt-and-braces,
++but nothing relies on it now.
++
++### 4. Events filter buttons failed WCAG AA — FIXED
++
++`.events-filter-btn` used `--text-light` on `.events-bar`, which is `--u-200`
++`#DDCDAC`. Measured **4.34:1**, under the 4.5 threshold — the only place on the
++site where `--text-light` lands on a surface that dark. Changed to
++`--text-mid`: **5.33:1**, and the next stop on the existing ramp, so no new
++value enters the system.
++
++---
++
++## Could NOT reproduce: team portraits
++
++**The twelve portraits render correctly.** Chromium, desktop and mobile
++viewports, against the built `dist/`, with and without lazy-loading forced, with
++and without the CDN reachable. Screenshot confirms all twelve.
++
++The previous note's ruled-out list was accurate and the diff it recommended was
++the right instinct, but the delta it predicted isn't there: computed styles are
++identical across all twelve `<img>` elements, all twelve report
++`complete: true` with non-zero `naturalWidth`, and the `sizes` attribute
++resolves to a real candidate.
++
++Best guess at what was actually being seen: **the stuck transition panel from
++item 1.** It paints opaque over everything at `z-index: 9999` the moment a
++navigation fails. The note describes `--u-200` tan blocks and the panel is near
++black, so this isn't a clean match — but the panel bug was real, reproducible,
++and would black out exactly that region.
++
++**Do not spend more time on this without a fresh screenshot showing it.** If it
++reappears, capture the screenshot first and attach it here.
++
++---
++
++## Still open
++
++### Video header — not started, and worth a decision before it is
++
++Video: https://youtu.be/0VvmR5TV490 — still unwatched. The previous analysis of
++placement and constraints holds and is worth re-reading before building.
++
++The honest case against, from the notes themselves: a 3MB hero video is the
++single heaviest thing on the site and works directly against the performance and
++dependency work already done. It also needs an MP4 + WebM export that does not
++exist yet. Decide whether it earns the weight before building it.
++
++### Security review — not started
++
++The useful version checks whether the sermon function can be abused, whether
++form handling is injection-safe, and what the third-party script origins
++expose — not a linter run pasted into a file.
++
++Note that the third-party origin question now has teeth: the site pulls five
++libraries from jsdelivr plus fonts from Google and Typekit, and item 1 above is
++what happened when they didn't arrive. Self-hosting anime.js is worth costing
++out.
++
++### Deploy is behind a 401
++
++`https://remarkable-yeot-b87ce8.netlify.app/` returns **401 on every route**,
++including `/`. The deploy itself is fine — this is Netlify's
++**Site settings → Access & security → Visitor access** password protection, not
++a build or routing failure. Note that a 401 on `/team` is consistent with
++site-wide protection and is *not* evidence the `_redirects` SPA fallback broke.
++
++`build.sh` also still writes a `robots.txt` that disallows everything. Both the
++password and that block have to come off at launch — there is a note in
++`build.sh` marking it.
++
++### Unchanged from before
++
++- Home sermons block looks sparse locally; the feed function only runs on
++  Netlify. Confirm once the 401 is lifted.
++- Skylee Aguilar, Brennan Platt and Juven Garcia have no local portrait, so
++  they are missing from `/team`.
++- Privacy policy and custom 404 still missing. The `_redirects` SPA fallback
++  serves the homepage for any mistyped URL, which is worse than a 404.
++- **Cheree's title is inconsistent**: "Discipleship Director" on `/team`,
++  "Discipleship Pastor" on Next Steps. One of them is wrong — check which
++  before publishing.
++
++---
++
++## Note on running the suite
++
++`devices['iPhone 13']` defaults to **WebKit**. If WebKit isn't installed the
++whole mobile project fails instantly (~2ms per test) with
++`browserType.launch: Target page, context or browser has been closed` — that is
++a missing browser, not 35 real failures. Run
++`npx playwright install --with-deps` first. The green run above forced Chromium
++for the mobile project, so **mobile has not been verified on real WebKit** this
++session.
+diff --git a/START-HERE.md b/START-HERE.md
+new file mode 100644
+index 0000000..09620b9
+--- /dev/null
++++ b/START-HERE.md
+@@ -0,0 +1,79 @@
++# Start here
++
++Entry point for anyone — human or agent — picking this project up cold.
++Read in this order. It takes about ten minutes and saves a day.
++
++---
++
++## 1. What this is
++
++Website for Yakima Foursquare Church. Vanilla HTML, CSS and JS. **No framework,
++no build tooling to install.** `build.sh` assembles `dist/` from an explicit
++file list; Netlify runs it on push.
++
++The no-framework choice is deliberate and load-bearing: it is why a church can
++maintain this. Proposals that require React, Tailwind or a bundler are a
++rewrite, not an addition. Say so plainly rather than starting one.
++
++## 2. Read these, in order
++
++| File | What it gives you |
++|---|---|
++| `NEXT-SESSION.md` | **Open bugs and what has already been ruled out.** Read first. |
++| `DESIGN-SYSTEM.md` | Scales, ramps, type split, WCAG rules — and the bugs that produced each rule |
++| `README.md` | Architecture, forms, sermon feed, verified facts |
++| `LIFE-PACIFIC-YAKIMA.md` | College section. Our reasoning vs. LPU's source deck, kept separate |
++| `PHOTOS.md` | Image slots and what each needs |
++| `DEPLOY.md` | Publishing |
++
++## 3. Run the tests before touching anything
++
++```bash
++npm install && npx playwright install --with-deps chromium
++npm test
++```
++
++`tests/site.spec.js` is the most reliable memory in this repo. Every test
++exists because that exact bug happened. If one fails, read its comment — it
++explains what broke and why the check is there.
++
++---
++
++## How to work on this
++
++**Look, don't only measure.** Repeated lesson. The mobile layout passed every
++numeric check while rendering in the wrong order. `getComputedStyle` reports
++stale values under `backdrop-filter` and will lie to you. Screenshot it.
++
++**Isolate before you change.** When something renders wrong, find a working
++instance of the same pattern and diff the two. Changing one property and
++re-screenshotting is slow and does not converge — that is how the team
++portrait bug ate an afternoon.
++
++**Verify claims about the site by checking the site.** Several confident
++statements in this project turned out to be false: that a CSS rule existed
++when it did not, that a name was correct when the partner's own deck said
++otherwise, that a fix had been logged when it had not.
++
++**Say what you did not do.** Half-finished work described as finished costs
++more than admitting the gap.
++
++**Do not invent facts.** Addresses, phone numbers, costs, staff names, event
++dates and impact figures must come from a source. Anything unknown gets marked
++visibly, not filled in plausibly.
++
++**Nothing may depend on an animation to be visible.** This has broken four
++times. Entrance effects are motion and blur only, never opacity.
++
++---
++
++## Standing constraints
++
++- **PCO credentials never reach front-end code.** Proxy through a function.
++- **No YouTube API key needed.** Sermons read the public Atom feed via
++  `netlify/functions/sermons.mjs`.
++- Verified and hard-won: **700 N 40th Ave, Yakima, WA 98908** ·
++  **(509) 575-1490** · Sundays **9:00 and 10:30 AM**. All three were wrong
++  somewhere on the old site.
++- **Jake Edler no longer works there.** Accurate as history for the March 2026
++  LPU signing; must not appear in current copy or staff listings.
+diff --git a/app.js b/app.js
+index a8e03ac..43660ec 100644
+--- a/app.js
++++ b/app.js
+@@ -8,17 +8,36 @@ function showPage(id) {
+   if (panel) {
+     panel.classList.add('entering');
+     setTimeout(function() {
+-      _doShowPage(id);
+-      panel.classList.add('leaving');
+-      panel.classList.remove('entering');
+-      setTimeout(function() {
+-        panel.classList.remove('leaving');
+-        _pageTransitioning = false;
+-      }, 380);
++      /* try/finally is load-bearing, not defensive habit. The panel is an
++         opaque full-viewport element at z-index 9999. If anything inside
++         _doShowPage throws, the two lines that retract it never run, and the
++         site is a permanent black screen with _pageTransitioning stuck true —
++         which also kills every future navigation. That is exactly what
++         happened when the jsdelivr CDN was unreachable and heroEntrance hit an
++         undefined `anime`. The panel must retract whether the page switch
++         succeeded or not: a page with no transition is recoverable, a black
++         screen is not. */
++      try {
++        _doShowPage(id);
++      } catch (e) {
++        if (window.console) console.error('showPage failed, retracting panel anyway:', e);
++      } finally {
++        panel.classList.add('leaving');
++        panel.classList.remove('entering');
++        setTimeout(function() {
++          panel.classList.remove('leaving');
++          _pageTransitioning = false;
++        }, 380);
++      }
+     }, 260);
+   } else {
+-    _doShowPage(id);
+-    _pageTransitioning = false;
++    try {
++      _doShowPage(id);
++    } catch (e) {
++      if (window.console) console.error('showPage failed:', e);
++    } finally {
++      _pageTransitioning = false;
++    }
+   }
+ }
+ function _doShowPage(id) {
+@@ -218,14 +237,23 @@ function navToPage(id, anchor) { closeMenu(); setTimeout(function() { showPage(i
+       observed.add(entry.target);
+       const el = entry.target;
+       const delay = parseInt(el.dataset.delay || '0');
+-      if (el.classList.contains('yfc-fade')) {
+-        anime({ targets: el, opacity: [1,1], translateY: [28,0], duration: 700, delay: delay, easing: 'easeOutCubic' });
+-      } else if (el.classList.contains('yfc-fade-left')) {
+-        anime({ targets: el, opacity: [1,1], translateX: [-32,0], duration: 700, delay: delay, easing: 'easeOutCubic' });
+-      } else if (el.classList.contains('yfc-fade-right')) {
+-        anime({ targets: el, opacity: [1,1], translateX: [32,0], duration: 700, delay: delay, easing: 'easeOutCubic' });
+-      } else if (el.classList.contains('yfc-scale')) {
+-        anime({ targets: el, opacity: [1,1], scale: [0.94,1], duration: 600, delay: delay, easing: 'easeOutQuart' });
++      /* Second unguarded `anime` call site. This one fires from an
++         IntersectionObserver on nearly every section of every page, so with
++         the CDN slow or blocked it threw continuously, not once.
++         As above, skipping is safe precisely because these animate
++         opacity: [1,1] — the entrance is motion, never reveal. The unobserve
++         below stays outside the guard: the element is done either way, and
++         leaving it observed would re-throw on every scroll. */
++      if (typeof anime !== 'undefined') {
++        if (el.classList.contains('yfc-fade')) {
++          anime({ targets: el, opacity: [1,1], translateY: [28,0], duration: 700, delay: delay, easing: 'easeOutCubic' });
++        } else if (el.classList.contains('yfc-fade-left')) {
++          anime({ targets: el, opacity: [1,1], translateX: [-32,0], duration: 700, delay: delay, easing: 'easeOutCubic' });
++        } else if (el.classList.contains('yfc-fade-right')) {
++          anime({ targets: el, opacity: [1,1], translateX: [32,0], duration: 700, delay: delay, easing: 'easeOutCubic' });
++        } else if (el.classList.contains('yfc-scale')) {
++          anime({ targets: el, opacity: [1,1], scale: [0.94,1], duration: 600, delay: delay, easing: 'easeOutQuart' });
++        }
+       }
+       io.unobserve(el);
+     });
+@@ -280,6 +308,15 @@ function navToPage(id, anchor) { closeMenu(); setTimeout(function() { showPage(i
+   }
+ 
+   function heroEntrance(pageId) {
++    /* Every other anime block on the site is guarded with this check; this one
++       was missed, and _doShowPage calls it on EVERY page switch. With the CDN
++       slow or blocked, `anime` is undefined here, the ReferenceError unwinds
++       out of _doShowPage, and the transition panel never retracts.
++       Bailing out costs only motion: every call below animates
++       opacity: [1,1] — i.e. no opacity change at all — so nothing here is
++       required for content to be visible. That is the site's standing rule and
++       it is what makes returning early safe. */
++    if (typeof anime === 'undefined') return;
+     anime({ targets: '#nav .nav-logo', opacity: [1,1], translateY: [-12,0], duration: 800, delay: 100, easing: 'easeOutQuart' });
+     anime({ targets: '#nav .nav-right', opacity: [1,1], translateY: [-8,0], duration: 700, delay: 250, easing: 'easeOutCubic' });
+     var heroH = document.querySelector('#page-' + pageId + ' h1');
+@@ -1709,7 +1746,18 @@ function yfcSubmitForm(formEl, successId) {
+     lbls.forEach(function(a,k){ a.classList.toggle('is-on', k===i); });
+     rings.forEach(function(a,k){ a.classList.toggle('is-on', k===i); });
+     tabs.forEach(function(a,k){ a.classList.toggle('is-on', k===i); a.setAttribute('aria-selected', k===i); });
+-    hubN.textContent = s.n; hubT.textContent = s.name; hubS.textContent = s.verb;
++    /* The hub trio is vestigial. An earlier version of this wheel had a centre
++       hub that retitled itself per stage; the Venn redesign replaced it with a
++       static .pw-core / .pw-core-t ("one life") and dropped .pw-hub-n/-t/-s
++       from the markup — but not from here. So show(0) threw on every single
++       page load, which meant the wire() handlers were registered and then the
++       initial show(0) died: no stage highlighted, and the whole right-hand
++       panel (number, verb, title, lede, list, CTA, reference) stayed at
++       whatever the HTML hardcoded. The component has been dead in production,
++       independent of the CDN. Write the hub only if it is actually there. */
++    if (hubN) hubN.textContent = s.n;
++    if (hubT) hubT.textContent = s.name;
++    if (hubS) hubS.textContent = s.verb;
+     pNum.textContent = s.n; pVerb.textContent = s.verb;
+     pTitle.textContent = s.name; pLede.textContent = s.lede;
+     pCta.textContent = s.cta; pCta.setAttribute('href', s.href); pRef.textContent = s.ref;
+diff --git a/styles.css b/styles.css
+index 7e95578..d6f398b 100644
+--- a/styles.css
++++ b/styles.css
+@@ -2127,7 +2127,13 @@ footer { background: var(--ink); padding: 128px 32px 48px; }
+   padding: 8px 16px;
+   border: 1px solid rgba(22,19,15,0.15);
+   background: none;
+-  color: var(--text-light);
++  /* --text-light is fine on the page canvas (6.13:1 on --u-50) but these
++     buttons sit on .events-bar, which is --u-200 #DDCDAC. Against that tan the
++     same token drops to 4.34:1 — under AA, and the only place on the site
++     where --text-light lands on a surface this dark. --text-mid gives 5.33:1
++     and is the next stop on the existing ramp, so nothing new is introduced.
++     Measured, not eyeballed; the ratio is why the value changed. */
++  color: var(--text-mid);
+   cursor: pointer;
+   transition: all 0.2s;
+ }
+@@ -3416,16 +3422,31 @@ p, .desc, .footer-desc,
+ }
+ .pw-stage-card:hover { transform: translateY(-4px); filter: brightness(1.08); }
+ 
+-/* Stage detail sections — scroll reveal */
++/* Stage detail sections — scroll reveal.
++
++   These three sections used to start at opacity: 0 and wait for an
++   IntersectionObserver to add .pw-visible. That is the failure this project
++   has now hit five times, and it breaks the standing rule: nothing may depend
++   on an animation to be visible. Entrance is motion only.
++
++   Concretely, it meant ns-belong, ns-contribute and ns-multiply were fully
++   transparent until either the observer fired or the 2.5s ui.js safety net
++   caught them — so a visitor who landed and read for two seconds, or anyone
++   whose IntersectionObserver never fired, saw three empty bands. The suite
++   caught it as "invisible text on nextsteps"; it waits 1.65s, inside that gap.
++
++   Motion alone gives the same reveal and cannot hide anything. The safety net
++   in ui.js stays as belt-and-braces, but nothing now relies on it. */
+ .pw-detail {
+-  opacity: 0;
+   transform: translateY(24px);
+-  transition: opacity 0.55s ease, transform 0.55s ease;
++  transition: transform 0.55s ease;
+ }
+ .pw-detail.pw-visible {
+-  opacity: 1;
+   transform: translateY(0);
+ }
++@media (prefers-reduced-motion: reduce) {
++  .pw-detail, .pw-detail.pw-visible { transform: none; transition: none; }
++}
+ 
+ /* Develop detail cards */
+ .dev-card {
+-- 
+2.43.0
+
