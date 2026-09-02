@@ -1,0 +1,131 @@
+From 28fb78413996372a56bbac796de11d22d7741e5c Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 2 Sep 2026 15:44:12 +0000
+Subject: [PATCH] Commit the lockfile, ignore patch and holding-pen folders
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+package-lock.json was untracked, so `npm install` resolved @playwright/test
+fresh on every machine. The repo asks for ^1.49.0 and currently resolves to
+1.62.1, which expects a different bundled browser build — a test run can fail
+for no reason other than when it was set up. Pinning it makes the suite
+reproducible, which matters here because tests/site.spec.js is the most
+reliable memory in this project.
+
+Also ignoring two folders that only exist to move work between machines:
+
+- patches/ holds format-patch output. It is transport, not source.
+- _to_delete/ holds files the sandbox could not remove, because the mounted
+  folder forbids unlink. It currently contains two stale .git/index.lock
+  files that were blocking git. Delete the folder in Finder; it should never
+  be versioned.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_012Uz6js2Gvt177WmPyzMien
+---
+ .gitignore        |  7 +++++
+ package-lock.json | 76 +++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 83 insertions(+)
+ create mode 100644 package-lock.json
+
+diff --git a/.gitignore b/.gitignore
+index d73d381..72ae7be 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -28,3 +28,10 @@ test-results/
+ playwright-report/
+ blob-report/
+ playwright/.cache/
++
++# Patch files used to move commits between machines. Transport, not source.
++patches/
++
++# Holding pen for files the sandbox could not delete directly (the mount
++# forbids unlink). Delete this folder in Finder; it should never be versioned.
++_to_delete/
+diff --git a/package-lock.json b/package-lock.json
+new file mode 100644
+index 0000000..6eda0e5
+--- /dev/null
++++ b/package-lock.json
+@@ -0,0 +1,76 @@
++{
++  "name": "yfc-site",
++  "lockfileVersion": 3,
++  "requires": true,
++  "packages": {
++    "": {
++      "name": "yfc-site",
++      "devDependencies": {
++        "@playwright/test": "^1.49.0"
++      }
++    },
++    "node_modules/@playwright/test": {
++      "version": "1.62.1",
++      "resolved": "https://registry.npmjs.org/@playwright/test/-/test-1.62.1.tgz",
++      "integrity": "sha512-DTcUc8qii+cpHvtOwggMtBRMjKZHXYWdw8syRYu2vtzuq4Wxphqq4NfCs5Zt44L6mA8rfDfj+PHnxFc/FeK6mQ==",
++      "dev": true,
++      "license": "Apache-2.0",
++      "dependencies": {
++        "playwright": "1.62.1"
++      },
++      "bin": {
++        "playwright": "cli.js"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    },
++    "node_modules/fsevents": {
++      "version": "2.3.2",
++      "resolved": "https://registry.npmjs.org/fsevents/-/fsevents-2.3.2.tgz",
++      "integrity": "sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==",
++      "dev": true,
++      "hasInstallScript": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": "^8.16.0 || ^10.6.0 || >=11.0.0"
++      }
++    },
++    "node_modules/playwright": {
++      "version": "1.62.1",
++      "resolved": "https://registry.npmjs.org/playwright/-/playwright-1.62.1.tgz",
++      "integrity": "sha512-0M+L3LAD8/nm554LOla9Ayx0j0tmFZ0FBcoQ7F1VuVHpM/XpiC8RcDzBQB8W5+hA8L22THxELzeF+2WcUzvcLg==",
++      "dev": true,
++      "license": "Apache-2.0",
++      "dependencies": {
++        "playwright-core": "1.62.1"
++      },
++      "bin": {
++        "playwright": "cli.js"
++      },
++      "engines": {
++        "node": ">=20"
++      },
++      "optionalDependencies": {
++        "fsevents": "2.3.2"
++      }
++    },
++    "node_modules/playwright-core": {
++      "version": "1.62.1",
++      "resolved": "https://registry.npmjs.org/playwright-core/-/playwright-core-1.62.1.tgz",
++      "integrity": "sha512-wPYSwEBJY9GHraISXqyqtx0na0LpO3XEX7jNDhntbex7tzUS7kLnZsOlFruFJB4Hi/rhDMjXGqHewDZ68nYZVw==",
++      "dev": true,
++      "license": "Apache-2.0",
++      "bin": {
++        "playwright-core": "cli.js"
++      },
++      "engines": {
++        "node": ">=20"
++      }
++    }
++  }
++}
+-- 
+2.43.0
+
