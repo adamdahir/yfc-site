@@ -3668,7 +3668,44 @@ p, .desc, .footer-desc,
   transition: color .2s ease, background .2s ease, transform .22s cubic-bezier(.22,1,.28,1);
 }
 .switcher button:hover { color: #fff; background: rgba(255,255,255,.09); transform: translateY(-3px); }
-.switcher button.active { color: #fff; background: rgba(255,255,255,.07); }
+/* The active background is now painted by the gooey pill below, so the flat
+   rectangle that used to sit here would double up with it. */
+.switcher button.active { color: #fff; background: none; }
+
+/* ── GOOEY ACTIVE PILL ──────────────────────────────────────────────
+   A pill that travels to whichever page is active, with a smaller blob
+   that lags behind it. Under the goo filter the two stretch into one
+   another while moving and settle into a single shape when they arrive,
+   so the indicator reads as liquid rather than as a sliding rectangle.
+
+   Everything here is decoration. The buttons keep their own colour and
+   remain fully legible if the filter is unsupported, in which case this
+   degrades to a plain rounded rectangle — which is what it was before.
+
+   The layer is opaque inside the filter and made translucent afterwards:
+   feColorMatrix works on the alpha channel, so semi-transparent shapes
+   would be crushed out before they had a chance to merge. */
+.switcher .sw-goo {
+  position: absolute; inset: 0; z-index: 0;
+  border-radius: 15px; overflow: hidden;
+  filter: url(#yfc-goo);
+  opacity: .2;
+  pointer-events: none;
+}
+.switcher .sw-pill,
+.switcher .sw-trail {
+  position: absolute; top: 4px; height: calc(100% - 8px);
+  background: #fff; border-radius: 11px;
+  transform: translateZ(0);
+  transition: left .46s cubic-bezier(.22,1,.28,1), width .46s cubic-bezier(.22,1,.28,1);
+}
+.switcher .sw-trail { transition-delay: .07s; }
+/* Buttons must sit above the filtered layer. */
+.switcher button { position: relative; z-index: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .switcher .sw-pill, .switcher .sw-trail { transition: none; }
+}
 /* running-page indicator dot */
 .switcher button::after {
   content: ''; position: absolute; left: 50%; bottom: 4px;

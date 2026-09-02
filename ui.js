@@ -593,3 +593,45 @@ window.yfcDismissAnnouncement = yfcDismissAnnouncement;
   else hide();
   setTimeout(hide, 200);   /* after app.js may have shown it */
 })();
+
+/* ══════════════════════════════════════════════════════════════════════
+   GOOEY ACTIVE PILL — page switcher
+
+   Moves the liquid indicator to whichever switcher button is active. The
+   trailing blob is deliberately narrower and runs on a delay (set in CSS),
+   so during transit the two separate and the goo filter stretches a neck
+   between them; on arrival they overlap and read as one pill.
+
+   Driven by a MutationObserver on the buttons' class attribute rather than
+   by hooking showPage. Nothing in app.js needs to know this exists, and an
+   exception there cannot leave the indicator stranded — the same reason
+   the reveal safety net lives in this file.
+   ══════════════════════════════════════════════════════════════════════ */
+(function () {
+  var bar = document.querySelector('.switcher');
+  if (!bar) return;
+  var pill  = bar.querySelector('.sw-pill');
+  var trail = bar.querySelector('.sw-trail');
+  if (!pill || !trail) return;
+
+  function place() {
+    var on = bar.querySelector('button.active');
+    if (!on) return;
+    var left = on.offsetLeft, w = on.offsetWidth;
+    if (!w) return;                        // dock not laid out yet
+    pill.style.left  = left + 'px';
+    pill.style.width = w + 'px';
+    var tw = Math.max(18, w * 0.55);       // narrower, so the neck reads
+    trail.style.left  = (left + (w - tw) / 2) + 'px';
+    trail.style.width = tw + 'px';
+  }
+
+  new MutationObserver(place).observe(bar, {
+    subtree: true, attributes: true, attributeFilter: ['class']
+  });
+
+  window.addEventListener('resize', place);
+  window.addEventListener('load', place);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
+  place();
+})();
