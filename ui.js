@@ -595,43 +595,176 @@ window.yfcDismissAnnouncement = yfcDismissAnnouncement;
 })();
 
 /* ══════════════════════════════════════════════════════════════════════
-   GOOEY ACTIVE PILL — page switcher
+   GOOEY ACTIVE INDICATOR
 
-   Moves the liquid indicator to whichever switcher button is active. The
-   trailing blob is deliberately narrower and runs on a delay (set in CSS),
-   so during transit the two separate and the goo filter stretches a neck
-   between them; on arrival they overlap and read as one pill.
+   Attaches a liquid indicator to any row of buttons that has one .active
+   member. Two rounded rects inside an SVG: a lead that matches the active
+   button, and a narrower trail that runs on a delay. During travel the pair
+   separate, the goo filter stretches a neck between them, and they settle
+   back into a single shape.
 
-   Driven by a MutationObserver on the buttons' class attribute rather than
-   by hooking showPage. Nothing in app.js needs to know this exists, and an
-   exception there cannot leave the indicator stranded — the same reason
-   the reveal safety net lives in this file.
+   Applied to three rows: the page dock, the events filters and the sermon
+   filters.
+
+   Two decisions that keep this working in Safari, both taken from Jakub
+   Antalik's liquid-gooey, which documents them:
+
+   1. The filter is a presentation attribute on SVG content, never CSS
+      filter: url() on an HTML element. WebKit is unreliable with the
+      latter, particularly inside a position: fixed ancestor — which the
+      dock is.
+   2. Geometry is animated by writing x/width attributes from rAF, not by
+      CSS transition. Those attributes are only CSS-animatable in newer
+      engines, and this has to survive whatever phone opens Instagram.
+
+   Where a row already paints a solid background on its active button, that
+   background stays and the indicator is given the same fill. Removing it
+   would drop the button's text onto the bar behind it, and on the events
+   bar that is white on #DDCDAC — about 1.9:1, far under AA. The visible
+   addition is the travel and the trail, not the resting state.
+
+   Decoration only: every button keeps its own colour and stays legible if
+   filters are unsupported.
    ══════════════════════════════════════════════════════════════════════ */
 (function () {
-  var bar = document.querySelector('.switcher');
-  if (!bar) return;
-  var pill  = bar.querySelector('.sw-pill');
-  var trail = bar.querySelector('.sw-trail');
-  if (!pill || !trail) return;
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  var DUR = 460, LAG = 90;
+  var reduce = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  function place() {
-    var on = bar.querySelector('button.active');
-    if (!on) return;
-    var left = on.offsetLeft, w = on.offsetWidth;
-    if (!w) return;                        // dock not laid out yet
-    pill.style.left  = left + 'px';
-    pill.style.width = w + 'px';
-    var tw = Math.max(18, w * 0.55);       // narrower, so the neck reads
-    trail.style.left  = (left + (w - tw) / 2) + 'px';
-    trail.style.width = tw + 'px';
+  attach.n = 0;
+  function attach(bar, opt) {
+    if (!bar || bar.querySelector(':scope > .goo-ind')) return;
+    var btns = bar.querySelectorAll(opt.sel);
+    if (btns.length < 2) return;
+
+    var svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('class', 'goo-ind');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.style.opacity = opt.rest;
+    svg.style.transition = 'opacity .18s linear';
+
+    /* Each row gets its own filter, because the blur has to scale with the
+       row's height. The alpha crush erodes the shape by roughly a third of
+       the blur radius, so a stdDeviation tuned for the 50px dock eats the
+       corners off a 34px filter pill. */
+    var h0 = btns[0].offsetHeight || 34;
+    var dev = Math.max(2.5, Math.round(h0 * 0.15 * 10) / 10);
+    var fid = 'yfc-goo-' + (++attach.n);
+    var defs = document.createElementNS(SVG_NS, 'defs');
+    var flt = document.createElementNS(SVG_NS, 'filter');
+    flt.setAttribute('id', fid);
+    flt.setAttribute('color-interpolation-filters', 'sRGB');
+    flt.setAttribute('x', '-25%'); flt.setAttribute('y', '-60%');
+    flt.setAttribute('width', '150%'); flt.setAttribute('height', '220%');
+    var fb = document.createElementNS(SVG_NS, 'feGaussianBlur');
+    fb.setAttribute('in', 'SourceGraphic');
+    fb.setAttribute('stdDeviation', dev);
+    fb.setAttribute('result', 'b');
+    var fc = document.createElementNS(SVG_NS, 'feColorMatrix');
+    fc.setAttribute('in', 'b'); fc.setAttribute('mode', 'matrix');
+    fc.setAttribute('values', '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -8');
+    flt.appendChild(fb); flt.appendChild(fc); defs.appendChild(flt);
+    svg.appendChild(defs);
+
+    var g = document.createElementNS(SVG_NS, 'g');
+    g.setAttribute('filter', 'url(#' + fid + ')');
+    var trail = document.createElementNS(SVG_NS, 'rect');
+    var lead  = document.createElementNS(SVG_NS, 'rect');
+    [trail, lead].forEach(function (r) {
+      r.setAttribute('rx', opt.rx); r.setAttribute('ry', opt.rx);
+      r.setAttribute('fill', opt.fill);
+      g.appendChild(r);
+    });
+    svg.appendChild(g);
+    bar.insertBefore(svg, bar.firstChild);
+
+    var cur = null, from = null, dest = null, t0 = 0, raf = 0;
+
+    function measure() {
+      var on = bar.querySelector(opt.sel + '.active');
+      if (!on || !on.offsetWidth) return null;
+      return { x: on.offsetLeft, w: on.offsetWidth, y: on.offsetTop, h: on.offsetHeight };
+    }
+    function draw(a, b) {
+      svg.setAttribute('width', bar.clientWidth);
+      svg.setAttribute('height', bar.clientHeight);
+      lead.setAttribute('x', a.x);  lead.setAttribute('width', a.w);
+      lead.setAttribute('y', a.y);  lead.setAttribute('height', a.h);
+      /* At rest the trail sits exactly under the lead, so the two must be
+         identical or the union reads as a pinched shape rather than a pill.
+         It narrows only in proportion to how far it has fallen behind. */
+      var gap = Math.min(1, Math.abs(a.x - b.x) / 44);
+      var tw = Math.max(16, b.w * (1 - 0.45 * gap));
+      var th = b.h * (1 - 0.38 * gap);
+      trail.setAttribute('x', b.x + (b.w - tw) / 2);
+      trail.setAttribute('width', tw);
+      trail.setAttribute('y', b.y + (b.h - th) / 2);
+      trail.setAttribute('height', th);
+    }
+    function ease(t) { return 1 - Math.pow(1 - t, 4); }
+    function step(now) {
+      var e = now - t0;
+      var p = ease(Math.min(1, e / DUR));
+      var q = ease(Math.min(1, Math.max(0, e - LAG) / DUR));
+      function at(k) {
+        return { x: from.x + (dest.x - from.x) * k, w: from.w + (dest.w - from.w) * k,
+                 y: from.y + (dest.y - from.y) * k, h: from.h + (dest.h - from.h) * k };
+      }
+      var a = at(p);
+      draw(a, at(q));
+      cur = a;
+      if (e < DUR + LAG) raf = requestAnimationFrame(step);
+      else { cur = dest; raf = 0; svg.style.opacity = opt.rest; }
+    }
+    function place(animate) {
+      var next = measure();
+      if (!next) return;
+      if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      if (!cur || !animate || reduce) { cur = next; draw(next, next); return; }
+      if (next.x === cur.x && next.w === cur.w) { draw(next, next); return; }
+      from = cur; dest = next; t0 = performance.now();
+      svg.style.opacity = opt.move;
+      raf = requestAnimationFrame(step);
+    }
+
+    new MutationObserver(function () { place(true); })
+      .observe(bar, { subtree: true, attributes: true, attributeFilter: ['class'] });
+
+    /* A row inside an inactive page has zero width, so the first measure
+       fails and the first interaction would snap instead of travelling.
+       Re-measure when the owning page is switched on. */
+    var page = bar.closest && bar.closest('.page');
+    if (page) new MutationObserver(function () {
+      if (page.classList.contains('active')) setTimeout(function () { place(false); }, 60);
+    }).observe(page, { attributes: true, attributeFilter: ['class'] });
+    window.addEventListener('resize', function () { place(false); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { place(false); });
+    place(false);
+    return place;
   }
 
-  new MutationObserver(place).observe(bar, {
-    subtree: true, attributes: true, attributeFilter: ['class']
-  });
+  function boot() {
+    /* rest vs move: where a button paints its own background, the indicator
+       would only fight it at rest — the goo's alpha crush erodes the pill's
+       ends, so a rounded blob under a square button reads as a pinched edge.
+       Those rows keep the indicator invisible until something moves. The
+       dock is the exception: its buttons have no background, so the pill is
+       the active marker and has to stay visible. */
+    attach(document.querySelector('.switcher'),
+           { sel: 'button', fill: '#ffffff', rest: 0.3, move: 0.34, rx: 11 });
+    attach(document.querySelector('.events-filter-pills'),
+           { sel: '.events-filter-btn', fill: '#8F521E', rest: 0, move: 1, rx: 3 });
+    attach(document.querySelector('.srm-filters'),
+           { sel: '.srm-filter', fill: '#16130F', rest: 0, move: 1, rx: 4 });
+  }
 
-  window.addEventListener('resize', place);
-  window.addEventListener('load', place);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(place);
-  place();
+  boot();
+  window.addEventListener('load', boot);
+  /* The sermon bar is hidden until the feed returns, so its row may not be
+     measurable on first pass. Re-run once it appears. */
+  var bar = document.querySelector('.srm-bar');
+  if (bar) new MutationObserver(boot).observe(bar, { attributes: true, attributeFilter: ['hidden'] });
 })();
