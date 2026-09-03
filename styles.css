@@ -6,6 +6,101 @@
    ═══════════════════════════════════════════════════════════ */
 @layer reset, tokens, base, layout, components, utilities, a11y;
 
+/* ═══════════════════════════════════════════════════════════════════════
+   ██  CONTROL PANEL  ██   Edit these. Nothing else.
+   ═══════════════════════════════════════════════════════════════════════
+
+   Every value below feeds the rest of this 210KB stylesheet. Change one
+   here and it changes everywhere it should, without hunting for the rule.
+
+   Two ways to use it:
+     1. Edit a value below, save, run  bash build.sh , reload.
+     2. Open the site with  ?edit  on the end of the URL for a live panel
+        with sliders. Adjust until it looks right, press Copy, paste the
+        result over this block. Nothing is saved until you paste.
+
+   The site will not break if you get a value wrong. Worst case something
+   looks odd and you undo it.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+
+  /* ── HEADINGS ─────────────────────────────────────────────────────────
+     Every large heading: page titles, section headings, the home hero. */
+  --ctl-heading-font:      'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --ctl-heading-weight:    600;      /* 400 light · 600 semi-bold · 700 bold */
+  --ctl-heading-case:      none;     /* none = Sentence case · uppercase = CAPS */
+  --ctl-heading-tracking:  -0.02em;  /* negative tightens. CAPS want positive */
+  --ctl-hero-tracking:     -0.03em;  /* the biggest lines want a touch tighter */
+
+  /* ── ACCENT TYPE ──────────────────────────────────────────────────────
+     The small labels above each section. Currently the only serif left. */
+  --ctl-accent-font:       'adobe-jenson-pro-caption', 'adobe-jenson-pro', Georgia, serif;
+  --ctl-accent-case:       uppercase;
+  --ctl-accent-tracking:   0.12em;   /* capitals need positive tracking */
+
+  /* ── BODY ─────────────────────────────────────────────────────────────*/
+  --ctl-body-font:         'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* ── COLOUR ───────────────────────────────────────────────────────────
+     The amber used for links, buttons and accents across the site.
+     Keep it dark enough for white text to stay legible on it. */
+  --ctl-accent-color:      #8F521E;
+
+  /* ── MOTION ───────────────────────────────────────────────────────────*/
+  --ctl-page-fade-ms:      260;      /* black panel between pages. 0 disables */
+  --ctl-goo-travel-ms:     460;      /* how long the liquid pill takes to move */
+  --ctl-goo-blur:          0.15;     /* liquid thickness, as a share of height */
+  --ctl-goo-contrast:      19;       /* higher = harder edges, less melt       */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ██  PER-SECTION OVERRIDES  ██
+   ═══════════════════════════════════════════════════════════════════════
+
+   The block above sets the whole site. These set one page or one section,
+   and only what you name. Anything you leave out keeps the site-wide value.
+
+   Example — bolder, tighter headings on the Beliefs page only:
+
+       #page-believe {
+         --ctl-heading-weight: 700;
+         --ctl-heading-tracking: -0.03em;
+       }
+
+   Any --ctl- name from the block above works inside any of these. The
+   ?edit panel writes here for you when you pick a section from its
+   dropdown, so you rarely need to type these by hand.
+
+   They are empty on purpose. An empty rule changes nothing.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Whole pages ──────────────────────────────────────────────────────── */
+#page-home      { }
+#page-sermons   { }
+#page-believe   { }
+#page-nextsteps { }
+#page-livestream{ }
+#page-resources { }
+#page-ministries{ }
+#page-events    { }
+#page-give      { }
+#page-team      { }
+#page-college   { }
+
+/* ── Individual sections ──────────────────────────────────────────────── */
+.home-hero      { }   /* the big opening headline on Home        */
+.home-strips    { }   /* the three doorway rows under the hero   */
+.care           { }   /* Support & Recovery block on Home        */
+.yfc-manifesto  { }   /* "what we're believing for"              */
+.pw-wheel-sec   { }   /* the pathway wheel on Next Steps         */
+.tm-grid        { }   /* the team portrait grid                  */
+.srm-hero       { }   /* Sermons page header                     */
+.lp-hero        { }   /* Life Pacific page header                */
+.events-bar     { }   /* the events filter bar                   */
+
+
+
+
 @layer components {
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -35,7 +130,7 @@
   --u-50:  #F5F3EF;   /* lightest · page canvas                   */
 
   /* ── ACCENT — sunset amber. ~10% coverage, never a large surface ── */
-  --amber-700: #8F521E;   /* AA text on light                     */
+  --amber-700: var(--ctl-accent-color);   /* wired to the control panel at the top of this file */
   --amber-600: #A55E22;   /* CTA fills · AA on white              */
   --amber-500: #D4823A;   /* the sunset · hero glow, key moments  */
   --amber-300: #E8B778;   /* labels on dark                       */
@@ -3695,9 +3790,16 @@ p, .desc, .footer-desc,
   width: 100%; height: 100%;
   pointer-events: none; overflow: visible;
 }
-/* The rows need to be a positioning context, and their buttons need to sit
-   above the indicator. */
-.switcher, .events-filter-pills, .srm-filters { position: relative; }
+/* The rows need to be a positioning context for the indicator, and their
+   buttons need to sit above it.
+
+   .switcher is deliberately NOT in this list. It is already position: fixed
+   — which is a containing block, so the indicator anchors to it correctly —
+   and re-declaring it as relative here silently overrode that (same
+   specificity, later in the file). The dock dropped out of the viewport
+   layer and its park transform hid it in normal flow, so it vanished as you
+   pulled it up. */
+.events-filter-pills, .srm-filters { position: relative; }
 .switcher button,
 .events-filter-pills .events-filter-btn,
 .srm-filters .srm-filter { position: relative; z-index: 1; }
@@ -5308,12 +5410,17 @@ a[href], button, [role="button"], input, select, textarea, .srm-filter, .pw-tab,
    ═══════════════════════════════════════════════════════════════════ */
 @layer utilities {
   :root {
-    --font-display: 'adobe-jenson-pro-caption', 'adobe-jenson-pro', Georgia, serif;
-    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-display: var(--ctl-accent-font);
+    --font-ui: var(--ctl-body-font);
   }
 
   .home-hero h1,
   .page-hd h1,
+  /* Five pages predate .page-hd and carry their own hero wrapper, so their
+     main heading sat outside this group entirely and ignored the control
+     panel. Named explicitly so every page's h1 is actually governed. */
+  .believe-hero h1,
+  .nextsteps-intro h1,
   .section-heading,
   .lp-h1, .lp-h2, .lp-cta-h,
   .care-h,
@@ -5321,16 +5428,16 @@ a[href], button, [role="button"], input, select, textarea, .srm-filter, .pw-tab,
   .srm-page-title,
   .srm-empty-h,
   .tm-foot-h {
-    font-family: var(--font-ui) !important;
-    text-transform: none;
-    letter-spacing: -0.02em !important;
+    font-family: var(--ctl-heading-font) !important;
+    text-transform: var(--ctl-heading-case);
+    letter-spacing: var(--ctl-heading-tracking) !important;
     line-height: 1.05;
-    font-weight: 600;
+    font-weight: var(--ctl-heading-weight);
   }
 
   /* Display sizes need tighter tracking than body copy. Inter's default
      spacing is tuned for text, and looks loose set large. */
-  .lp-h1, .home-hero h1 { line-height: 1.02; letter-spacing: -0.03em !important; }
+  .lp-h1, .home-hero h1 { line-height: 1.02; letter-spacing: var(--ctl-hero-tracking) !important; }
 
   /* ── JENSON AS ACCENT ───────────────────────────────────────────────
      The serif now appears only on the small labels that introduce a
@@ -5353,9 +5460,9 @@ a[href], button, [role="button"], input, select, textarea, .srm-filter, .pw-tab,
   .pathsteps-eyebrow,
   .manifesto-eyebrow,
   .srm-eyebrow {
-    font-family: var(--font-display) !important;
-    text-transform: uppercase;
-    letter-spacing: 0.12em !important;
+    font-family: var(--ctl-accent-font) !important;
+    text-transform: var(--ctl-accent-case);
+    letter-spacing: var(--ctl-accent-tracking) !important;
     font-weight: 400;
   }
 

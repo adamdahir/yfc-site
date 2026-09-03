@@ -628,12 +628,24 @@ window.yfcDismissAnnouncement = yfcDismissAnnouncement;
    ══════════════════════════════════════════════════════════════════════ */
 (function () {
   var SVG_NS = 'http://www.w3.org/2000/svg';
-  var DUR = 460, LAG = 90;
+
+  /* Read from the CONTROL PANEL block at the top of styles.css, so these are
+     tunable in one place rather than buried in here. Falls back to the
+     shipped values if a variable is missing or malformed. */
+  function ctl(name, fallback) {
+    var v = parseFloat(getComputedStyle(document.documentElement)
+              .getPropertyValue(name));
+    return isFinite(v) ? v : fallback;
+  }
+  var LAG = 90;
   var reduce = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   attach.n = 0;
   function attach(bar, opt) {
+    var DUR        = ctl('--ctl-goo-travel-ms', 460);
+    var BLUR_RATIO = ctl('--ctl-goo-blur', 0.15);
+    var CONTRAST   = ctl('--ctl-goo-contrast', 19);
     if (!bar || bar.querySelector(':scope > .goo-ind')) return;
     var btns = bar.querySelectorAll(opt.sel);
     if (btns.length < 2) return;
@@ -651,7 +663,7 @@ window.yfcDismissAnnouncement = yfcDismissAnnouncement;
        the blur radius, so a stdDeviation tuned for the 50px dock eats the
        corners off a 34px filter pill. */
     var h0 = btns[0].offsetHeight || 34;
-    var dev = Math.max(2.5, Math.round(h0 * 0.15 * 10) / 10);
+    var dev = Math.max(2.5, Math.round(h0 * BLUR_RATIO * 10) / 10);
     var fid = 'yfc-goo-' + (++attach.n);
     var defs = document.createElementNS(SVG_NS, 'defs');
     var flt = document.createElementNS(SVG_NS, 'filter');
@@ -665,7 +677,8 @@ window.yfcDismissAnnouncement = yfcDismissAnnouncement;
     fb.setAttribute('result', 'b');
     var fc = document.createElementNS(SVG_NS, 'feColorMatrix');
     fc.setAttribute('in', 'b'); fc.setAttribute('mode', 'matrix');
-    fc.setAttribute('values', '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 19 -8');
+    fc.setAttribute('values',
+      '1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 ' + CONTRAST + ' ' + (-CONTRAST * 0.42).toFixed(2));
     flt.appendChild(fb); flt.appendChild(fc); defs.appendChild(flt);
     svg.appendChild(defs);
 
@@ -763,6 +776,14 @@ window.yfcDismissAnnouncement = yfcDismissAnnouncement;
 
   boot();
   window.addEventListener('load', boot);
+
+  /* The ?edit panel changes the control variables at runtime; the filters are
+     built from them once, so they have to be torn down and rebuilt to pick a
+     new value up. */
+  window._yfcGooRebuild = function () {
+    document.querySelectorAll('.goo-ind').forEach(function (el) { el.remove(); });
+    boot();
+  };
   /* The sermon bar is hidden until the feed returns, so its row may not be
      measurable on first pass. Re-run once it appears. */
   var bar = document.querySelector('.srm-bar');

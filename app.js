@@ -5,6 +5,12 @@ function showPage(id) {
   if (_pageTransitioning) return;
   _pageTransitioning = true;
   var panel = document.getElementById('yfc-transition-panel');
+  /* Duration comes from the CONTROL PANEL block at the top of styles.css.
+     Set --ctl-page-fade-ms to 0 there to switch the transition off entirely. */
+  var _fade = parseFloat(getComputedStyle(document.documentElement)
+                .getPropertyValue('--ctl-page-fade-ms'));
+  if (!isFinite(_fade)) _fade = 260;
+  if (panel && _fade <= 0) panel = null;
   if (panel) {
     panel.classList.add('entering');
     setTimeout(function() {
@@ -29,7 +35,7 @@ function showPage(id) {
           _pageTransitioning = false;
         }, 380);
       }
-    }, 260);
+    }, _fade);
   } else {
     try {
       _doShowPage(id);

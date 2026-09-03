@@ -13,7 +13,7 @@ set -uo pipefail
 rm -rf dist 2>/dev/null || true
 mkdir -p dist/assets
 
-cp -f index.html styles.css app.js ui.js og-image.jpg _redirects dist/
+cp -f index.html styles.css app.js ui.js editor.js og-image.jpg _redirects dist/
 cp -rf assets/. dist/assets/          # -r: assets/team/ is a subdirectory
 
 # Preview build: keep it out of search results. Delete this block at launch.
